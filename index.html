@@ -159,7 +159,7 @@ button:disabled{opacity:.55;cursor:wait}
 <script>
 "use strict";
 /* Adresse du script Google qui écrit dans le tableau du responsable */
-const ENDPOINT = "";
+const ENDPOINT = "https://script.google.com/a/macros/veolia.com/s/AKfycby3zrP2d_QX6K-dNGMpfcf7nfNatVTOwRJszYq_2VmECPPgJNrwt-SUGVFpr5_i2MaDLw/exec";
 
 const $=id=>document.getElementById(id);
 let pos=null, photoData='';
@@ -244,7 +244,7 @@ $('form').addEventListener('submit',async e=>{
   }catch(err){
     if(err.refused){msg('Réclamation refusée : '+err.message,'err')}
     else{const q=queue();q.push(payload);setQueue(q);f.reset();
-      setTimeout(()=>msg("Pas de réseau : la réclamation est gardée sur ce téléphone et partira automatiquement dès que le réseau revient.",'info'),10)}
+      setTimeout(()=>msg(navigator.onLine?"Envoi impossible pour le moment : la réclamation est gardée sur ce téléphone et sera renvoyée automatiquement à la prochaine ouverture du formulaire.":"Pas de réseau : la réclamation est gardée sur ce téléphone et partira automatiquement dès que le réseau revient.",'info'),10)}
   }finally{b.disabled=false}
 });
 flush();
