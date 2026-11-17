@@ -203,9 +203,14 @@ $('photo').addEventListener('change',async()=>{
   catch(e){msg("Cette image n'a pas pu être lue. Essayez une autre photo.",'err')}
 });
 
+let lastErr='';
 async function send(payload){
-  const r=await fetch(ENDPOINT,{method:'POST',body:JSON.stringify(payload)});
-  const j=await r.json();
+  let r,txt;
+  try{r=await fetch(ENDPOINT,{method:'POST',body:JSON.stringify(payload)})}
+  catch(e){lastErr='connexion bloquée ('+e.message+') : vérifiez « Qui a accès : Tout le monde » et « Exécuter en tant que : Moi »';throw e}
+  txt=await r.text();let j;
+  try{j=JSON.parse(txt)}
+  catch(e){lastErr='réponse inattendue du script (HTTP '+r.status+') : '+(txt.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim().slice(0,160)||'vide');throw e}
   if(!j.ok)throw Object.assign(new Error(j.error||'refus'),{refused:true});
   return j;
 }
@@ -244,7 +249,7 @@ $('form').addEventListener('submit',async e=>{
   }catch(err){
     if(err.refused){msg('Réclamation refusée : '+err.message,'err')}
     else{const q=queue();q.push(payload);setQueue(q);f.reset();
-      setTimeout(()=>msg(navigator.onLine?"Envoi impossible pour le moment : la réclamation est gardée sur ce téléphone et sera renvoyée automatiquement à la prochaine ouverture du formulaire.":"Pas de réseau : la réclamation est gardée sur ce téléphone et partira automatiquement dès que le réseau revient.",'info'),10)}
+      setTimeout(()=>msg(navigator.onLine?"Envoi impossible pour le moment : la réclamation est gardée sur ce téléphone et sera renvoyée automatiquement à la prochaine ouverture du formulaire."+(lastErr?' Détail technique : '+lastErr:''):"Pas de réseau : la réclamation est gardée sur ce téléphone et partira automatiquement dès que le réseau revient.",'info'),10)}
   }finally{b.disabled=false}
 });
 flush();
