@@ -1,0 +1,13 @@
+# Publication du formulaire avec GitLab Pages.
+# À chaque modification de la branche principale, index.html est mis en ligne.
+pages:
+  stage: deploy
+  image: alpine:3.20
+  script:
+    - mkdir -p public
+    - cp index.html public/
+  artifacts:
+    paths:
+      - public
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
