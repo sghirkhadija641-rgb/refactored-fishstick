@@ -154,7 +154,7 @@ button:disabled{opacity:.55;cursor:wait}
     </form>
   </section>
   <p class="privacy">Les réclamations envoyées ne sont pas visibles sur ce formulaire : elles sont transmises directement au responsable.</p>
-  <p class="privacy">Version 7</p>
+  <p class="privacy">Version 8</p>
 </div>
 
 <script>
@@ -163,7 +163,7 @@ button:disabled{opacity:.55;cursor:wait}
 const ENDPOINT = "https://script.google.com/macros/s/AKfycbyI5QXbjccYtqrxVOKhL4faXZXJs1ZS8Rba-VgTHtY1sg9baAJraZeJTvV0klHukwEj/exec";
 
 const $=id=>document.getElementById(id);
-let pos=null, photoData='';
+let pos=null, photoData='', thumbData='';
 const QKEY='reuse-envoi-en-attente';
 
 try{$('agent').value=localStorage.getItem('reuse-agent')||''}catch(e){}
@@ -196,11 +196,11 @@ $('btnGeo').addEventListener('click',()=>{
 
 /* ---------- Formulaire ---------- */
 $('nature').addEventListener('change',()=>{$('fuiteBox').hidden=$('nature').value!=="Fuite d'eau"});
-$('form').addEventListener('reset',()=>setTimeout(()=>{$('fuiteBox').hidden=true;$('preview').hidden=true;photoData='';pos=null;showPos();$('geoNote').textContent='Placez-vous sur le lieu de la fuite puis appuyez sur le bouton.'},0));
+$('form').addEventListener('reset',()=>setTimeout(()=>{$('fuiteBox').hidden=true;$('preview').hidden=true;photoData='';thumbData='';pos=null;showPos();$('geoNote').textContent='Placez-vous sur le lieu de la fuite puis appuyez sur le bouton.'},0));
 function shrink(file,max=1280){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(img.src);res(c.toDataURL('image/jpeg',0.75))};img.onerror=()=>rej(new Error('image'));img.src=URL.createObjectURL(file)})}
 $('photo').addEventListener('change',async()=>{
-  const f=$('photo').files[0];photoData='';$('preview').hidden=true;if(!f)return;
-  try{photoData=await shrink(f);$('preview').src=photoData;$('preview').hidden=false}
+  const f=$('photo').files[0];photoData='';thumbData='';$('preview').hidden=true;if(!f)return;
+  try{photoData=await shrink(f);thumbData=await shrink(f,400);$('preview').src=photoData;$('preview').hidden=false}
   catch(e){msg("Cette image n'a pas pu être lue. Essayez une autre photo.",'err')}
 });
 
@@ -248,7 +248,7 @@ $('form').addEventListener('submit',async e=>{
   const payload={clientId:(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random()),saisieLe:new Date().toISOString(),
     agent:v('agent'),nom:v('nom'),tel:v('tel'),email:v('email'),adresse:v('adresse'),quartier:v('quartier'),ville:v('ville'),
     lat:pos?pos.lat:'',lng:pos?pos.lng:'',precision:pos?Math.round(pos.acc):'',
-    nature:v('nature'),localisation:fuite?f.elements.loc.value:'',importance:fuite?(f.elements.imp.value||''):'',obs:v('obs'),photo:photoData};
+    nature:v('nature'),localisation:fuite?f.elements.loc.value:'',importance:fuite?(f.elements.imp.value||''):'',obs:v('obs'),photo:photoData,vignette:thumbData};
   const b=$('btnSave');b.disabled=true;msg('Envoi en cours…','info');
   try{
     const j=await send(payload);
