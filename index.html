@@ -75,6 +75,7 @@ button:disabled{opacity:.55;cursor:wait}
 
   <section class="panel">
     <div class="agent"><label for="agent">Agent <span class="req">*</span></label><input id="agent" placeholder="Votre nom (mémorisé)"></div>
+    <div class="agent"><label for="code">Code agent <span class="req">*</span></label><input id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="Code donné par le responsable"></div>
     <form id="form" novalidate>
       <fieldset>
         <legend>Réclamant</legend>
@@ -154,7 +155,7 @@ button:disabled{opacity:.55;cursor:wait}
     </form>
   </section>
   <p class="privacy">Les réclamations envoyées ne sont pas visibles sur ce formulaire : elles sont transmises directement au responsable.</p>
-  <p class="privacy">Version 8</p>
+  <p class="privacy">Version 9</p>
 </div>
 
 <script>
@@ -168,6 +169,8 @@ const QKEY='reuse-envoi-en-attente';
 
 try{$('agent').value=localStorage.getItem('reuse-agent')||''}catch(e){}
 $('agent').addEventListener('change',()=>{try{localStorage.setItem('reuse-agent',$('agent').value.trim())}catch(e){}});
+try{$('code').value=localStorage.getItem('reuse-code')||''}catch(e){}
+$('code').addEventListener('change',()=>{try{localStorage.setItem('reuse-code',$('code').value.trim().toUpperCase())}catch(e){}});
 
 function msg(t,k){$('msg').textContent=t;$('msg').className='msg '+(k||'')}
 const mapsUrl=(lat,lng)=>'https://www.google.com/maps?q='+lat+','+lng;
@@ -240,13 +243,13 @@ $('form').addEventListener('submit',async e=>{
   e.preventDefault();
   const v=id=>($(id).value||'').trim(),f=$('form');
   if(!ENDPOINT)return msg("Ce formulaire n'est pas encore relié au tableau du responsable.",'err');
-  const miss=[];if(!v('agent'))miss.push('agent');if(!v('nom'))miss.push('nom');if(!v('tel'))miss.push('téléphone');if(!v('adresse'))miss.push('adresse');if(!v('nature'))miss.push('nature');
+  const miss=[];if(!v('agent'))miss.push('agent');if(!v('code'))miss.push('code agent');if(!v('nom'))miss.push('nom');if(!v('tel'))miss.push('téléphone');if(!v('adresse'))miss.push('adresse');if(!v('nature'))miss.push('nature');
   if(miss.length)return msg('Champ obligatoire manquant : '+miss.join(', ')+'.','err');
   if((v('tel').match(/\d/g)||[]).length<8)return msg('Le numéro de téléphone semble incomplet (8 chiffres minimum).','err');
   const fuite=v('nature')==="Fuite d'eau";
   if(fuite&&!f.elements.loc.value)return msg('Indiquez la localisation de la fuite.','err');
   const payload={clientId:(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random()),saisieLe:new Date().toISOString(),
-    agent:v('agent'),nom:v('nom'),tel:v('tel'),email:v('email'),adresse:v('adresse'),quartier:v('quartier'),ville:v('ville'),
+    agent:v('agent'),code:v('code').toUpperCase(),nom:v('nom'),tel:v('tel'),email:v('email'),adresse:v('adresse'),quartier:v('quartier'),ville:v('ville'),
     lat:pos?pos.lat:'',lng:pos?pos.lng:'',precision:pos?Math.round(pos.acc):'',
     nature:v('nature'),localisation:fuite?f.elements.loc.value:'',importance:fuite?(f.elements.imp.value||''):'',obs:v('obs'),photo:photoData,vignette:thumbData};
   const b=$('btnSave');b.disabled=true;msg('Envoi en cours…','info');

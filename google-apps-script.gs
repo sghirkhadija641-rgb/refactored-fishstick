@@ -8,6 +8,9 @@
  * (Exécuter en tant que : Moi ; Qui a accès : Tout le monde).
  */
 
+// Code secret à donner aux agents. Sans ce code, l'envoi est refusé.
+const CODE_AGENT = 'A_REMPLACER';
+
 const SHEET_NAME = 'Réclamations';
 const FOLDER_NAME = 'Photos réclamations Ré-Use';
 const HEADERS = ['N° réclamation', 'Date de réception', 'Agent', 'Nom du réclamant', 'Téléphone', 'E-mail',
@@ -20,7 +23,7 @@ const NATURES = ['Réfection', "Fuite d'eau", "Qualité d'eau", 'Problème de Pr
 function doGet() {
   let note = '';
   try { note = ' Lignes réparées : ' + reparerAnciennesLignes() + '.'; } catch (e) { note = ' Réparation impossible : ' + e.message; }
-  return ContentService.createTextOutput('Le script des réclamations Ré-Use fonctionne. (version 4)' + note);
+  return ContentService.createTextOutput('Le script des réclamations Ré-Use fonctionne. (version 5)' + note);
 }
 
 function doPost(e) {
@@ -28,6 +31,9 @@ function doPost(e) {
   try {
     lock.waitLock(25000);
     const d = JSON.parse(e.postData.contents);
+    if (String(d.code || '').trim().toUpperCase() !== CODE_AGENT.toUpperCase()) {
+      return reply({ ok: false, error: 'code agent incorrect. Demandez le bon code à votre responsable.' });
+    }
     for (const k of ['agent', 'nom', 'tel', 'adresse', 'nature']) {
       if (!d[k] || !String(d[k]).trim()) return reply({ ok: false, error: 'champ manquant (' + k + ')' });
     }
