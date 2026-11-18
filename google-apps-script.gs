@@ -18,7 +18,7 @@ const NATURES = ['Réfection', "Fuite d'eau", "Qualité d'eau", 'Problème de Pr
   'Demande Rebranchement', 'DFO', "Manque d'eau", 'Appel Client pour Information'];
 
 function doGet() {
-  return ContentService.createTextOutput('Le script des réclamations Ré-Use fonctionne.');
+  return ContentService.createTextOutput('Le script des réclamations Ré-Use fonctionne. (version 3)');
 }
 
 function doPost(e) {
@@ -108,6 +108,40 @@ function getSheet() {
     sh.setColumnWidth(COL.apercu, 160);
   }
   return sh;
+}
+
+/**
+ * À lancer une fois depuis l'éditeur (menu des fonctions > reparerAnciennesLignes > Exécuter) :
+ * remplace les anciens liens en #ERROR! par de vrais liens et ajoute l'aperçu des photos.
+ */
+function reparerAnciennesLignes() {
+  const sh = getSheet();
+  const last = sh.getLastRow();
+  if (last < 2) return;
+  const formulas = sh.getRange(2, 1, last - 1, COL.lienPhoto).getFormulas();
+  const urlOf = f => { const m = String(f || '').match(/HYPERLINK\("([^"]+)"/i); return m ? m[1] : null; };
+  formulas.forEach((f, i) => {
+    const row = i + 2;
+    const carte = urlOf(f[COL.carte - 1]);
+    if (carte) sh.getRange(row, COL.carte).setRichTextValue(link('Ouvrir la carte', carte));
+    const photo = urlOf(f[COL.lienPhoto - 1]);
+    if (photo) {
+      sh.getRange(row, COL.lienPhoto).setRichTextValue(link('Voir la photo', photo));
+      const id = (photo.match(/[-\w]{25,}/) || [])[0];
+      if (id) {
+        try {
+          const file = DriveApp.getFileById(id);
+          const blob = file.getThumbnail() || (file.getSize() < 1.5 * 1024 * 1024 ? file.getBlob() : null);
+          if (blob) {
+            const img = sh.insertImage(blob, COL.apercu, row, 4, 4);
+            const ratio = img.getHeight() / img.getWidth();
+            img.setWidth(150).setHeight(Math.round(150 * ratio));
+            sh.setRowHeight(row, Math.round(150 * ratio) + 10);
+          }
+        } catch (e) {}
+      }
+    }
+  });
 }
 
 function link(text, url) {
