@@ -18,7 +18,9 @@ const NATURES = ['Réfection', "Fuite d'eau", "Qualité d'eau", 'Problème de Pr
   'Demande Rebranchement', 'DFO', "Manque d'eau", 'Appel Client pour Information'];
 
 function doGet() {
-  return ContentService.createTextOutput('Le script des réclamations Ré-Use fonctionne. (version 3)');
+  let note = '';
+  try { note = ' Lignes réparées : ' + reparerAnciennesLignes() + '.'; } catch (e) { note = ' Réparation impossible : ' + e.message; }
+  return ContentService.createTextOutput('Le script des réclamations Ré-Use fonctionne. (version 4)' + note);
 }
 
 function doPost(e) {
@@ -111,37 +113,56 @@ function getSheet() {
 }
 
 /**
- * À lancer une fois depuis l'éditeur (menu des fonctions > reparerAnciennesLignes > Exécuter) :
- * remplace les anciens liens en #ERROR! par de vrais liens et ajoute l'aperçu des photos.
+ * Répare le tableau : anciens liens en #ERROR!, et lignes rangées dans les mauvaises colonnes
+ * par l'ancienne version du script. Se lance tout seul à chaque ouverture du lien du script ;
+ * on peut aussi la lancer depuis l'éditeur. Sans effet sur les lignes déjà correctes.
  */
 function reparerAnciennesLignes() {
   const sh = getSheet();
   const last = sh.getLastRow();
-  if (last < 2) return;
-  const formulas = sh.getRange(2, 1, last - 1, COL.lienPhoto).getFormulas();
+  if (last < 2) return 0;
+  const STATUTS = ['Ouverte', 'En cours', 'Clôturée'];
+  const n = HEADERS.length;
+  const values = sh.getRange(2, 1, last - 1, n).getValues();
+  const formulas = sh.getRange(2, 1, last - 1, n).getFormulas();
   const urlOf = f => { const m = String(f || '').match(/HYPERLINK\("([^"]+)"/i); return m ? m[1] : null; };
-  formulas.forEach((f, i) => {
-    const row = i + 2;
-    const carte = urlOf(f[COL.carte - 1]);
-    if (carte) sh.getRange(row, COL.carte).setRichTextValue(link('Ouvrir la carte', carte));
-    const photo = urlOf(f[COL.lienPhoto - 1]);
-    if (photo) {
-      sh.getRange(row, COL.lienPhoto).setRichTextValue(link('Voir la photo', photo));
-      const id = (photo.match(/[-\w]{25,}/) || [])[0];
-      if (id) {
-        try {
-          const file = DriveApp.getFileById(id);
-          const blob = file.getThumbnail() || (file.getSize() < 1.5 * 1024 * 1024 ? file.getBlob() : null);
-          if (blob) {
-            const img = sh.insertImage(blob, COL.apercu, row, 4, 4);
-            const ratio = img.getHeight() / img.getWidth();
-            img.setWidth(150).setHeight(Math.round(150 * ratio));
-            sh.setRowHeight(row, Math.round(150 * ratio) + 10);
-          }
-        } catch (e) {}
-      }
+  let fixed = 0;
+  values.forEach((v, i) => {
+    const row = i + 2, f = formulas[i];
+    let changed = false;
+    let photoUrl = urlOf(f[COL.lienPhoto - 1]);
+    // Ligne décalée d'une colonne (statut dans « Lien photo ») : on la remet en place.
+    if (STATUTS.indexOf(v[COL.lienPhoto - 1]) >= 0 && STATUTS.indexOf(v[COL.statut - 1]) < 0) {
+      photoUrl = urlOf(f[COL.apercu - 1]);
+      sh.getRange(row, COL.statut + 1).setValue(v[COL.statut - 1]);
+      sh.getRange(row, COL.statut).setValue(v[COL.lienPhoto - 1]);
+      sh.getRange(row, COL.apercu, 1, 2).clearContent();
+      changed = true;
     }
+    const carte = urlOf(f[COL.carte - 1]);
+    if (carte) { sh.getRange(row, COL.carte).setRichTextValue(link('Ouvrir la carte', carte)); changed = true; }
+    if (photoUrl) {
+      sh.getRange(row, COL.lienPhoto).setRichTextValue(link('Voir la photo', photoUrl));
+      addThumb(sh, row, photoUrl);
+      changed = true;
+    }
+    if (changed) fixed++;
   });
+  return fixed;
+}
+
+function addThumb(sh, row, driveUrl) {
+  const id = (String(driveUrl).match(/[-\w]{25,}/) || [])[0];
+  if (!id) return;
+  try {
+    const file = DriveApp.getFileById(id);
+    const blob = file.getThumbnail() || (file.getSize() < 1.5 * 1024 * 1024 ? file.getBlob() : null);
+    if (!blob) return;
+    const img = sh.insertImage(blob, COL.apercu, row, 4, 4);
+    const ratio = img.getHeight() / img.getWidth();
+    img.setWidth(150).setHeight(Math.round(150 * ratio));
+    sh.setRowHeight(row, Math.round(150 * ratio) + 10);
+  } catch (e) {}
 }
 
 function link(text, url) {
