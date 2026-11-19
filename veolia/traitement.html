@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f6e86">
+<meta name="robots" content="noindex">
+<title>Traitement Ré-Use</title>
+<style>
+:root{
+  --bg:#f3f6f7; --surface:#ffffff; --line:#d6e0e3; --fg:#14262c; --muted:#5b7078;
+  --accent:#0f6e86; --accent-ink:#ffffff; --accent-soft:#e1f0f4;
+  --ok:#2f7d4f; --ok-soft:#e3f3e9; --warn:#a76a00; --warn-soft:#fbf0d9; --bad:#b3332f; --bad-soft:#fbe5e4;
+  --f-body:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --f-display:"Arial Narrow","Roboto Condensed",system-ui,sans-serif;
+  --f-mono:ui-monospace,Consolas,"Roboto Mono",monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#0e1a1e; --surface:#15252a; --line:#273c43; --fg:#e3eef1; --muted:#93aab1;
+  --accent:#4fb6cf; --accent-ink:#06171c; --accent-soft:#163a44;
+  --ok:#6cc792; --ok-soft:#173326; --warn:#e6b45a; --warn-soft:#3a2d12; --bad:#ef8a85; --bad-soft:#3d1c1b;
+  color-scheme:dark}}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
+.wrap{max-width:560px;margin:0 auto;padding:16px max(14px,env(safe-area-inset-right)) 40px max(14px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:14px}
+header{border-bottom:2px solid var(--fg);padding-bottom:10px}
+h1{font-family:var(--f-display);font-weight:700;font-size:24px;margin:0}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted);margin:2px 0 0;font-size:13px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px}
+form{padding:14px;display:flex;flex-direction:column;gap:16px}
+fieldset{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
+legend,.lg{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;padding:0;margin-bottom:6px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:460px){.row{grid-template-columns:1fr}}
+label{display:block;font-weight:600;font-size:13px}
+label>input,label>select,label>textarea{display:block;margin-top:4px}
+.req{color:var(--bad)}
+input,select,textarea{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:9px 10px;width:100%}
+textarea{resize:vertical;min-height:64px}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.radios{display:flex;flex-direction:column;gap:8px}
+.radios label{display:flex;align-items:center;gap:8px;font-weight:400;font-size:14px}
+.radios input{width:auto;margin:0}
+.fuite{background:var(--accent-soft);border-radius:4px;padding:12px}
+.geo{border:1px dashed var(--accent);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.geo-btn{display:flex;align-items:center;justify-content:center;gap:8px;font-size:16px;padding:12px}
+.geo-btn svg{width:20px;height:20px}
+.geo-out{font-family:var(--f-mono);font-size:13px}
+.geo-out a{color:var(--accent)}
+.det{color:var(--muted);font-size:12px;margin:0}
+button{font:inherit;font-weight:600;border-radius:4px;padding:10px 14px;cursor:pointer;border:1px solid var(--line);background:var(--surface);color:var(--fg)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+button:disabled{opacity:.55;cursor:wait}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.actions .primary{flex:1 1 auto;font-size:16px;padding:12px}
+#preview{max-width:100%;max-height:200px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
+.msg{font-size:14px;margin:0;padding:10px 12px;border-radius:4px}
+.msg:empty{display:none}
+.msg.ok{color:var(--ok);background:var(--ok-soft)} .msg.err{color:var(--bad);background:var(--bad-soft)} .msg.info{color:var(--warn);background:var(--warn-soft)}
+.agent{display:flex;gap:8px;align-items:center;padding:10px 14px;background:var(--accent-soft);border-bottom:1px solid var(--line);font-size:13px}
+.agent label{white-space:nowrap}
+.agent input{padding:6px 8px;font-size:15px;margin:0}
+.agent-id{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+.agent-id label{white-space:normal}
+.agent-id input{margin-top:4px;background:var(--surface)}
+.checks{display:flex;flex-direction:column;gap:8px}
+.checks label{display:flex;align-items:center;gap:8px;font-weight:400;font-size:14px}
+.checks input{width:auto;margin:0}
+.privacy{font-size:12px;color:var(--muted);text-align:center;margin:0}
+.fixed{padding:9px 10px;border:1px dashed var(--line);border-radius:4px;color:var(--muted);font-size:15px;margin-top:4px}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap}
+.thumbs img{width:84px;height:64px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Traitement <span>Ré-Use</span></h1>
+    <p class="sub">À remplir par l'agent terrain après l'intervention</p>
+  </header>
+
+  <section class="panel">
+    <div class="agent agent-id">
+      <label for="agent">Agent <span class="req">*</span><input id="agent" autocomplete="off" placeholder="Votre nom"></label>
+      <label for="matricule">Matricule <span class="req">*</span><input id="matricule" autocomplete="off" placeholder="Votre matricule"></label>
+    </div>
+    <form id="form" novalidate>
+      <fieldset>
+        <legend>Réclamation</legend>
+        <div class="row">
+          <label for="numReclamation">N° Réclamation <span class="req">*</span><input id="numReclamation" autocomplete="off" placeholder="N° WebSIGID ou N° Saisie"></label>
+          <label for="dateReception">Date réception<input id="dateReception" type="date"></label>
+        </div>
+        <label for="etat">Etat de la réclamation <span class="req">*</span>
+          <select id="etat">
+            <option value=""></option>
+            <option>Résolue Définitivement</option>
+            <option>Transmise mais non encore résolue</option>
+            <option>Résolue Provisoirement</option>
+            <option>Non encore Transmise</option>
+          </select>
+        </label>
+        <div class="row">
+          <div><label>Métier</label><div class="fixed">Ré-Use</div></div>
+          <label for="nature">Nature réclamation <span class="req">*</span>
+            <select id="nature">
+              <option value=""></option>
+              <option>Appel Client pour Information</option><option>Demande Coupure</option><option>Demande Rebranchement</option>
+              <option>DFO</option><option>Fuite d'eau</option><option>Manque d'eau</option><option>Problème de Pression</option>
+              <option>Qualité d'eau</option><option>Réfection</option>
+            </select>
+          </label>
+        </div>
+        <label for="objet">Objet préliminaire<input id="objet" autocomplete="off"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Client</legend>
+        <div class="row">
+          <label for="typeClient">Type client
+            <select id="typeClient">
+              <option value=""></option>
+              <option>Particulier</option><option>Autorité</option><option>Communes</option><option>Elus</option>
+              <option>Résidences Royales</option><option>Industriels</option><option>V.I.P</option><option>GC-Entreprises</option>
+              <option>Planifié</option><option>GC-Administrations</option><option>Numéro Vert</option>
+            </select>
+          </label>
+          <label for="nomClient">Nom du client<input id="nomClient" autocomplete="off"></label>
+        </div>
+        <div class="row">
+          <label for="cil">CIL<input id="cil" autocomplete="off" inputmode="numeric"></label>
+          <label for="telPortable">Téléphone portable 1<input id="telPortable" type="tel" inputmode="tel" autocomplete="off"></label>
+        </div>
+        <label for="telFixe">Téléphone fixe<input id="telFixe" type="tel" inputmode="tel" autocomplete="off"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Adresse</legend>
+        <div class="row">
+          <label for="prefecture">Préfecture<input id="prefecture" autocomplete="off" list="prefectures"></label>
+          <label for="commune">Commune<input id="commune" autocomplete="off" list="communes"></label>
+        </div>
+        <datalist id="prefectures"><option>Rabat</option><option>Salé</option><option>Skhirat-Témara</option></datalist>
+        <datalist id="communes"><option>Rabat</option><option>Salé</option><option>Témara</option><option>Skhirat</option><option>Harhoura</option><option>Aïn Atiq</option></datalist>
+        <div class="row">
+          <label for="quartier">Quartier<input id="quartier" autocomplete="off"></label>
+          <label for="sousQuartier">Sous-quartier<input id="sousQuartier" autocomplete="off"></label>
+        </div>
+        <label for="rue">Rue<input id="rue" autocomplete="off"></label>
+        <label for="adresse">Adresse de la réclamation<input id="adresse" autocomplete="off"></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Suivi</legend>
+        <label for="rappels">Nombre de rappels<input id="rappels" type="number" min="0" step="1" inputmode="numeric" value="0"></label>
+        <label for="photos">Photos (jusqu'à 5)<input id="photos" type="file" accept="image/*" multiple></label>
+        <div class="thumbs" id="thumbs"></div>
+        <p class="det">Nombre de photos : <b id="nbPhotos">0</b></p>
+      </fieldset>
+
+      <p class="msg" id="msg" role="status"></p>
+      <div class="actions">
+        <button type="submit" class="primary" id="btnSave">Enregistrer le traitement</button>
+        <button type="reset">Effacer</button>
+      </div>
+    </form>
+  </section>
+  <p class="privacy">Le traitement est transmis directement au responsable, avec votre compte Veolia.</p>
+  <p class="privacy">Traitement — Version Veolia 5</p>
+</div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+let photos=[];
+['agent','matricule'].forEach(id=>{
+  try{$(id).value=localStorage.getItem('reuse-'+id)||''}catch(e){}
+  $(id).addEventListener('change',()=>{try{localStorage.setItem('reuse-'+id,$(id).value.trim())}catch(e){}});
+});
+function msg(t,k){$('msg').textContent=t;$('msg').className='msg '+(k||'')}
+function shrink(file,max=1280){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(img.src);res(c.toDataURL('image/jpeg',0.75))};img.onerror=()=>rej(new Error('image'));img.src=URL.createObjectURL(file)})}
+function showPhotos(){const t=$('thumbs');t.replaceChildren();photos.forEach(p=>{const i=document.createElement('img');i.src=p;i.alt='Photo';t.append(i)});$('nbPhotos').textContent=photos.length}
+$('photos').addEventListener('change',async()=>{
+  const files=[...$('photos').files].slice(0,5);photos=[];
+  if($('photos').files.length>5)msg('Seules les 5 premières photos sont gardées.','info');
+  for(const f of files){try{photos.push(await shrink(f))}catch(e){msg("Une image n'a pas pu être lue.",'err')}}
+  showPhotos();
+});
+$('form').addEventListener('reset',()=>setTimeout(()=>{photos=[];showPhotos()},0));
+
+function send(payload){
+  return new Promise((res,rej)=>{
+    google.script.run
+      .withSuccessHandler(j=>{ if(j&&j.ok)res(j); else rej(Object.assign(new Error((j&&j.error)||'refus'),{refused:true})); })
+      .withFailureHandler(rej)
+      .enregistrerTraitement(payload);
+  });
+}
+
+$('form').addEventListener('submit',async e=>{
+  e.preventDefault();
+  const v=id=>($(id).value||'').trim();
+  const miss=[];
+  if(!v('agent'))miss.push('nom de l’agent');if(!v('matricule'))miss.push('matricule');
+  if(!v('numReclamation'))miss.push('N° réclamation');if(!v('etat'))miss.push('état de la réclamation');if(!v('nature'))miss.push('nature réclamation');
+  if(miss.length)return msg('Champ obligatoire manquant : '+miss.join(', ')+'.','err');
+  const payload={agent:v('agent'),matricule:v('matricule'),numReclamation:v('numReclamation'),dateReception:v('dateReception'),
+    etat:v('etat'),nature:v('nature'),objet:v('objet'),typeClient:v('typeClient'),nomClient:v('nomClient'),cil:v('cil'),
+    prefecture:v('prefecture'),commune:v('commune'),quartier:v('quartier'),sousQuartier:v('sousQuartier'),rue:v('rue'),adresse:v('adresse'),
+    telPortable:v('telPortable'),telFixe:v('telFixe'),rappels:v('rappels'),photos};
+  const b=$('btnSave');b.disabled=true;msg('Envoi en cours…','info');
+  try{
+    const j=await send(payload);
+    $('form').reset();
+    setTimeout(()=>msg(j.nouvelle?'Traitement enregistré. Ce N° de réclamation n’existait pas encore : une nouvelle ligne a été créée pour le responsable.':'Traitement enregistré.','ok'),10);
+  }catch(err){
+    msg(err.refused?'Traitement refusé : '+err.message:'Envoi impossible pour le moment. Vérifiez le réseau puis appuyez de nouveau sur « Enregistrer le traitement ».','err');
+  }finally{b.disabled=false}
+});
+</script>
+</body>
+</html>

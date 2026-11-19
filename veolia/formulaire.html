@@ -70,34 +70,6 @@ button:disabled{opacity:.55;cursor:wait}
 .checks{display:flex;flex-direction:column;gap:8px}
 .checks label{display:flex;align-items:center;gap:8px;font-weight:400;font-size:14px}
 .checks input{width:auto;margin:0}
-.tabs{display:flex;gap:6px;border-bottom:2px solid var(--line)}
-.tab{border:0;border-bottom:3px solid transparent;border-radius:0;background:transparent;color:var(--muted);padding:10px 12px;margin-bottom:-2px}
-.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
-body.large .wrap{max-width:900px}
-.panel-h{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--line)}
-.panel-h h2{font-size:16px;margin:0}
-.metier{font-size:12px;color:var(--muted)}
-.pad{padding:14px;display:flex;flex-direction:column;gap:12px}
-details{border:1px dashed var(--line);border-radius:4px;padding:8px 10px;display:flex;flex-direction:column;gap:10px}
-details[open]>summary{margin-bottom:8px}
-summary{cursor:pointer;font-weight:600;color:var(--accent)}
-details>.row,details>label{margin-top:8px}
-.results{display:flex;flex-direction:column}
-.res{display:grid;grid-template-columns:1fr auto;gap:4px 12px;text-align:left;border:0;border-top:1px solid var(--line);border-radius:0;padding:12px 14px;background:var(--surface);width:100%;font-weight:400}
-.res:hover{background:var(--accent-soft)}
-.res b{font-family:var(--f-mono);font-size:13px}
-.res .d{color:var(--muted);font-size:12px;grid-column:1/-1}
-.etat{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;white-space:nowrap;align-self:start}
-.e0{background:var(--bad-soft);color:var(--bad)} .e1{background:var(--warn-soft);color:var(--warn)} .e2{background:var(--accent-soft);color:var(--accent)} .e3{background:var(--ok-soft);color:var(--ok)}
-.count{padding:8px 14px;font-size:12px;color:var(--muted)}
-.champs{display:grid;grid-template-columns:minmax(120px,40%) 1fr;gap:6px 12px;margin:0;font-size:14px}
-.champs dt{color:var(--muted)} .champs dd{margin:0;overflow-wrap:anywhere}
-.liens{display:flex;gap:12px;flex-wrap:wrap}
-.liens a{color:var(--accent);font-weight:600}
-.link-btn{border:0;background:transparent;color:var(--accent);padding:4px 0}
-label.inline{display:flex;align-items:center;gap:8px;font-weight:400;font-size:14px}
-label.inline input{width:auto;margin:0}
-#tPreview{max-width:100%;max-height:200px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
 .privacy{font-size:12px;color:var(--muted);text-align:center;margin:0}
 </style>
 </head>
@@ -108,12 +80,6 @@ label.inline input{width:auto;margin:0}
     <p class="sub">Saisie terrain d'une réclamation client</p>
   </header>
 
-  <nav class="tabs" id="tabs" hidden>
-    <button type="button" class="tab on" data-tab="saisie">Nouvelle réclamation</button>
-    <button type="button" class="tab" data-tab="traitement">Traitement</button>
-  </nav>
-
-  <div id="tabSaisie">
   <section class="panel">
     <div class="agent agent-id">
       <label for="agent">Agent <span class="req">*</span><input id="agent" autocomplete="off" placeholder="Votre nom"></label>
@@ -275,82 +241,6 @@ label.inline input{width:auto;margin:0}
     </form>
   </section>
   <p class="privacy">Les réclamations envoyées ne sont pas visibles sur ce formulaire : elles sont transmises directement au responsable, avec votre compte Veolia.</p>
-  </div>
-
-  <div id="tabTraitement" hidden>
-    <section class="panel">
-      <div class="panel-h"><h2>Recherche d'une réclamation</h2><span class="metier">Métier : Ré-Use</span></div>
-      <form id="search" class="pad" novalidate>
-        <div class="row">
-          <label for="sNum">N° Saisie ou N° réclamation<input id="sNum" autocomplete="off" placeholder="ex. RU-2026-00012"></label>
-          <label for="sEtat">Etat de la réclamation
-            <select id="sEtat">
-              <option value="non-resolues">Toutes sauf résolues définitivement</option>
-              <option value="">Tous les états</option>
-              <option>Non encore Transmise</option><option>Transmise mais non encore résolue</option>
-              <option>Résolue Provisoirement</option><option>Résolue Définitivement</option>
-            </select>
-          </label>
-        </div>
-        <div class="row">
-          <label for="sDu">Date réception du<input id="sDu" type="date"></label>
-          <label for="sAu">au<input id="sAu" type="date"></label>
-        </div>
-        <div class="row">
-          <label for="sNature">Nature réclamation<select id="sNature"><option value="">Toutes</option></select></label>
-          <label for="sType">Type client<select id="sType"><option value="">Tous</option></select></label>
-        </div>
-        <details>
-          <summary>Plus de critères</summary>
-          <div class="row">
-            <label for="sNom">Nom du client<input id="sNom" autocomplete="off"></label>
-            <label for="sAgent">Utilisateur saisie (nom ou matricule)<input id="sAgent" autocomplete="off"></label>
-          </div>
-          <div class="row">
-            <label for="sCil">CIL<input id="sCil" autocomplete="off" inputmode="numeric"></label>
-            <label for="sTel">Téléphone<input id="sTel" type="tel" autocomplete="off"></label>
-          </div>
-          <div class="row">
-            <label for="sCommune">Commune<input id="sCommune" autocomplete="off"></label>
-            <label for="sQuartier">Quartier<input id="sQuartier" autocomplete="off"></label>
-          </div>
-          <label for="sAdresse">Adresse de la réclamation<input id="sAdresse" autocomplete="off"></label>
-        </details>
-        <div class="actions">
-          <button type="submit" class="primary" id="btnSearch">Rechercher</button>
-          <button type="reset">Effacer les critères</button>
-        </div>
-        <p class="msg" id="sMsg" role="status"></p>
-      </form>
-      <div id="results" class="results"></div>
-    </section>
-
-    <section class="panel" id="fichePanel" hidden>
-      <div class="panel-h"><h2 id="ficheTitre">Fiche</h2><button type="button" class="link-btn" id="btnBack">← Retour à la liste</button></div>
-      <div class="pad">
-        <dl id="ficheChamps" class="champs"></dl>
-        <div class="liens" id="ficheLiens"></div>
-      </div>
-      <form id="traitement" class="pad" novalidate>
-        <fieldset>
-          <legend>Traitement</legend>
-          <label for="tEtat">Etat de la réclamation <span class="req">*</span><select id="tEtat"></select></label>
-          <label for="tReclamation">N° de réclamation (WebSIGID)<input id="tReclamation" autocomplete="off"></label>
-          <div class="row">
-            <label for="tDate">Date d'intervention<input id="tDate" type="date"></label>
-            <label for="tHeure">Heure d'intervention<input id="tHeure" type="time"></label>
-          </div>
-          <label for="tIntervenant">Intervenant (nom et matricule)<input id="tIntervenant" autocomplete="off"></label>
-          <label for="tAction">Action réalisée<textarea id="tAction" placeholder="Travaux effectués, suite donnée…"></textarea></label>
-          <label for="tPhoto">Photo après travaux<input id="tPhoto" type="file" accept="image/*" capture="environment"></label>
-          <img id="tPreview" alt="Aperçu de la photo après travaux" hidden>
-          <label class="inline"><input type="checkbox" id="tRappel"> Le client a rappelé (ajoute 1 au nombre de rappels : <b id="tRappels">0</b>)</label>
-        </fieldset>
-        <p class="msg" id="tMsg" role="status"></p>
-        <div class="actions"><button type="submit" class="primary" id="btnTraiter">Enregistrer le traitement</button></div>
-      </form>
-    </section>
-  </div>
   <p class="privacy">Version Veolia 5</p>
 </div>
 
@@ -495,87 +385,6 @@ $('form').addEventListener('submit',async e=>{
   }finally{b.disabled=false}
 });
 flush();
-
-/* ===================== Traitement ===================== */
-const run=(fn,...a)=>new Promise((res,rej)=>google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...a));
-const ETAT_CLASS={'Non encore Transmise':'e0','Transmise mais non encore résolue':'e1','Résolue Provisoirement':'e2','Résolue Définitivement':'e3'};
-let currentSaisie='', photoApres='';
-function tmsg(id,t,k){$(id).textContent=t;$(id).className='msg '+(k||'')}
-function el(tag,props,...kids){const e=document.createElement(tag);Object.assign(e,props||{});kids.forEach(k=>k!=null&&e.append(k));return e}
-[...$('nature').options].filter(o=>o.value).forEach(o=>$('sNature').add(new Option(o.value,o.value)));
-[...$('typeClient').options].forEach(o=>$('sType').add(new Option(o.value,o.value)));
-
-function showTab(name){
-  $('tabSaisie').hidden=name!=='saisie';$('tabTraitement').hidden=name!=='traitement';
-  document.body.classList.toggle('large',name==='traitement');
-  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.tab===name));
-  if(name==='traitement'&&!$('results').childElementCount)search();
-}
-document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>showTab(b.dataset.tab)));
-run('moi').then(m=>{
-  if(!m||!m.traitement)return;
-  $('tabs').hidden=false;
-  (m.etats||[]).forEach(s=>$('tEtat').add(new Option(s,s)));
-}).catch(()=>{});
-
-function filtres(){const v=id=>($(id).value||'').trim();
-  return {num:v('sNum'),etat:$('sEtat').value,du:v('sDu'),au:v('sAu'),nature:v('sNature'),typeClient:v('sType'),nom:v('sNom'),agent:v('sAgent'),cil:v('sCil'),tel:v('sTel'),commune:v('sCommune'),quartier:v('sQuartier'),adresse:v('sAdresse')}}
-async function search(){
-  const b=$('btnSearch');b.disabled=true;tmsg('sMsg','Recherche en cours…','info');
-  try{
-    const r=await run('rechercher',filtres());
-    if(!r||!r.ok)return tmsg('sMsg','Recherche impossible : '+((r&&r.error)||'erreur'),'err');
-    tmsg('sMsg','');const box=$('results');box.replaceChildren();
-    box.append(el('div',{className:'count',textContent:r.total===0?'Aucune réclamation ne correspond à ces critères.':r.total+' réclamation(s)'+(r.total>r.items.length?' — les 200 plus récentes sont affichées':'')}));
-    r.items.forEach(it=>{
-      const btn=el('button',{type:'button',className:'res'},
-        el('span',{},el('b',{textContent:it.saisie}),it.reclamation?'  ·  N° '+it.reclamation:'','  ·  '+it.reception),
-        el('span',{className:'etat '+(ETAT_CLASS[it.etat]||''),textContent:it.etat}),
-        el('span',{className:'d',textContent:[it.nature+(it.detail?' ('+it.detail+')':''),it.nom,it.adresse,it.rappels?it.rappels+' rappel(s)':''].filter(Boolean).join(' — ')}));
-      btn.addEventListener('click',()=>ouvrir(it.saisie));box.append(btn);
-    });
-  }catch(e){tmsg('sMsg','Recherche impossible : '+(e&&e.message||e),'err')}
-  finally{b.disabled=false}
-}
-$('search').addEventListener('submit',e=>{e.preventDefault();search()});
-$('search').addEventListener('reset',()=>setTimeout(()=>{$('sEtat').value='non-resolues'},0));
-
-async function ouvrir(saisie){
-  tmsg('sMsg','Ouverture de la fiche…','info');
-  try{
-    const r=await run('fiche',saisie);
-    if(!r||!r.ok)return tmsg('sMsg','Fiche impossible à ouvrir : '+((r&&r.error)||'erreur'),'err');
-    tmsg('sMsg','');currentSaisie=r.saisie;$('ficheTitre').textContent='Fiche '+r.saisie;
-    const dl=$('ficheChamps');dl.replaceChildren();
-    r.champs.forEach(([k,v])=>dl.append(el('dt',{textContent:k}),el('dd',{textContent:v})));
-    const li=$('ficheLiens');li.replaceChildren();
-    [['carte','Ouvrir la carte'],['photo','Voir la photo'],['photoApres','Voir la photo après travaux']].forEach(([k,t])=>{if(r.liens[k])li.append(el('a',{href:r.liens[k],target:'_blank',rel:'noopener',textContent:t}))});
-    const t=r.traitement;$('tEtat').value=t.etat;$('tReclamation').value=t.reclamation;
-    $('tDate').value=t.intervention?t.intervention.slice(0,10):'';$('tHeure').value=t.intervention?t.intervention.slice(11,16):'';
-    $('tIntervenant').value=t.intervenant||[$('agent').value,$('matricule').value].filter(Boolean).join(' ');
-    $('tAction').value=t.action;$('tRappels').textContent=t.rappels;$('tRappel').checked=false;
-    $('tPhoto').value='';photoApres='';$('tPreview').hidden=true;tmsg('tMsg','');
-    $('fichePanel').hidden=false;$('fichePanel').scrollIntoView({behavior:'smooth'});
-  }catch(e){tmsg('sMsg','Fiche impossible à ouvrir : '+(e&&e.message||e),'err')}
-}
-$('btnBack').addEventListener('click',()=>{$('fichePanel').hidden=true;$('results').scrollIntoView({behavior:'smooth'})});
-$('tPhoto').addEventListener('change',async()=>{
-  const f=$('tPhoto').files[0];photoApres='';$('tPreview').hidden=true;if(!f)return;
-  try{photoApres=await shrink(f);$('tPreview').src=photoApres;$('tPreview').hidden=false}catch(e){tmsg('tMsg',"Cette image n'a pas pu être lue.",'err')}
-});
-$('traitement').addEventListener('submit',async e=>{
-  e.preventDefault();if(!currentSaisie)return;
-  const v=id=>($(id).value||'').trim();
-  const t={saisie:currentSaisie,etat:$('tEtat').value,reclamation:v('tReclamation'),
-    intervention:v('tDate')?v('tDate')+(v('tHeure')?'T'+v('tHeure'):''):'',intervenant:v('tIntervenant'),action:v('tAction'),rappel:$('tRappel').checked,photoApres};
-  const b=$('btnTraiter');b.disabled=true;tmsg('tMsg','Enregistrement…','info');
-  try{
-    const r=await run('traiter',t);
-    if(!r||!r.ok)return tmsg('tMsg','Enregistrement impossible : '+((r&&r.error)||'erreur'),'err');
-    await ouvrir(currentSaisie);tmsg('tMsg','Traitement enregistré.','ok');search();
-  }catch(err){tmsg('tMsg','Enregistrement impossible : '+(err&&err.message||err),'err')}
-  finally{b.disabled=false}
-});
 </script>
 </body>
 </html>
