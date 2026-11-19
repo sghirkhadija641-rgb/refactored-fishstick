@@ -35,9 +35,9 @@ h1 span{color:var(--accent)}
 .sub{color:var(--muted);margin:2px 0 0;font-size:13px}
 .panel{display:flex;flex-direction:column;gap:14px}
 form{display:flex;flex-direction:column;gap:14px}
-fieldset,.card{border:1px solid var(--line);border-radius:10px;padding:14px;margin:0;display:flex;flex-direction:column;gap:10px;min-width:0;background:var(--surface);box-shadow:0 1px 2px rgba(15,60,75,.06)}
-fieldset>legend,.card>.card-t{float:left;width:100%;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;padding:0 0 8px;margin:0 0 2px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
-fieldset>legend::before,.card>.card-t::before{content:"";width:4px;height:14px;border-radius:2px;background:var(--accent)}
+.card{border:1px solid var(--line);border-radius:10px;padding:14px;margin:0;display:flex;flex-direction:column;gap:10px;min-width:0;background:var(--surface);box-shadow:0 1px 2px rgba(15,60,75,.06)}
+.card>.card-t{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;padding:0 0 8px;margin:0 0 2px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.card>.card-t::before{content:"";width:4px;height:14px;border-radius:2px;background:var(--accent)}
 .lg{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;padding:0;margin-bottom:6px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media (max-width:460px){.row{grid-template-columns:1fr}}
@@ -46,6 +46,9 @@ label>input,label>select,label>textarea{display:block;margin-top:4px}
 .req{color:var(--bad)}
 input,select,textarea{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:9px 10px;width:100%}
 textarea{resize:vertical;min-height:64px}
+input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;min-height:44px;text-align:left}
+input::-webkit-date-and-time-value{text-align:left}
+.row>*{min-width:0}
 input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .radios{display:flex;flex-direction:column;gap:8px}
 .radios label{display:flex;align-items:center;gap:8px;font-weight:400;font-size:14px}
@@ -98,8 +101,8 @@ button:disabled{opacity:.55;cursor:wait}
       </div>
     </div>
     <form id="form" novalidate>
-      <fieldset>
-        <legend>Réclamation</legend>
+      <section class="card">
+        <div class="card-t">Réclamation</div>
         <label for="code">Code de suivi <span class="req">*</span><input id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ex. RU-K7P4Q (donné à la saisie)"></label>
         <p class="det" id="codeNote">La nature de la réclamation s'affichera dès que le code est saisi.</p>
         <label for="dateReception">Date réception<input id="dateReception" type="date"></label>
@@ -116,10 +119,10 @@ button:disabled{opacity:.55;cursor:wait}
           <div><label>Métier</label><div class="fixed">Ré-Use</div></div>
           <div><label>Nature réclamation</label><div class="fixed" id="natureVal">—</div></div>
         </div>
-      </fieldset>
+      </section>
 
-      <fieldset>
-        <legend>Client</legend>
+      <section class="card">
+        <div class="card-t">Client</div>
         <div class="row">
           <label for="typeClient">Type client
             <select id="typeClient">
@@ -136,15 +139,15 @@ button:disabled{opacity:.55;cursor:wait}
           <label for="telPortable">Téléphone portable 1<input id="telPortable" type="tel" inputmode="tel" autocomplete="off"></label>
         </div>
         <label for="telFixe">Téléphone fixe<input id="telFixe" type="tel" inputmode="tel" autocomplete="off"></label>
-      </fieldset>
+      </section>
 
-      <fieldset>
-        <legend>Suivi</legend>
+      <section class="card">
+        <div class="card-t">Suivi</div>
         <label for="rappels">Nombre de rappels<input id="rappels" type="number" min="0" step="1" inputmode="numeric" value="0"></label>
         <label for="photos">Photos (jusqu'à 5)<input id="photos" type="file" accept="image/*" multiple></label>
         <div class="thumbs" id="thumbs"></div>
         <p class="det">Nombre de photos : <b id="nbPhotos">0</b></p>
-      </fieldset>
+      </section>
 
       <p class="msg" id="msg" role="status"></p>
       <div class="actions">
@@ -154,7 +157,7 @@ button:disabled{opacity:.55;cursor:wait}
     </form>
   </section>
   <p class="privacy">Le traitement est transmis directement au responsable, avec votre compte Veolia.</p>
-  <p class="privacy">Traitement — Version Veolia 10</p>
+  <p class="privacy">Traitement — Version Veolia 11</p>
 </div>
 
 <script>

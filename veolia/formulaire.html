@@ -35,9 +35,9 @@ h1 span{color:var(--accent)}
 .sub{color:var(--muted);margin:2px 0 0;font-size:13px}
 .panel{display:flex;flex-direction:column;gap:14px}
 form{display:flex;flex-direction:column;gap:14px}
-fieldset,.card{border:1px solid var(--line);border-radius:10px;padding:14px;margin:0;display:flex;flex-direction:column;gap:10px;min-width:0;background:var(--surface);box-shadow:0 1px 2px rgba(15,60,75,.06)}
-fieldset>legend,.card>.card-t{float:left;width:100%;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;padding:0 0 8px;margin:0 0 2px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
-fieldset>legend::before,.card>.card-t::before{content:"";width:4px;height:14px;border-radius:2px;background:var(--accent)}
+.card{border:1px solid var(--line);border-radius:10px;padding:14px;margin:0;display:flex;flex-direction:column;gap:10px;min-width:0;background:var(--surface);box-shadow:0 1px 2px rgba(15,60,75,.06)}
+.card>.card-t{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;padding:0 0 8px;margin:0 0 2px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+.card>.card-t::before{content:"";width:4px;height:14px;border-radius:2px;background:var(--accent)}
 .lg{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;padding:0;margin-bottom:6px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media (max-width:460px){.row{grid-template-columns:1fr}}
@@ -46,6 +46,9 @@ label>input,label>select,label>textarea{display:block;margin-top:4px}
 .req{color:var(--bad)}
 input,select,textarea{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:9px 10px;width:100%}
 textarea{resize:vertical;min-height:64px}
+input[type=date],input[type=time]{-webkit-appearance:none;appearance:none;display:block;min-width:0;max-width:100%;min-height:44px;text-align:left}
+input::-webkit-date-and-time-value{text-align:left}
+.row>*{min-width:0}
 input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
 .radios{display:flex;flex-direction:column;gap:8px}
 .radios label{display:flex;align-items:center;gap:8px;font-weight:400;font-size:14px}
@@ -94,25 +97,25 @@ button:disabled{opacity:.55;cursor:wait}
       </div>
     </div>
     <form id="form" novalidate>
-      <fieldset>
-        <legend>Réception</legend>
+      <section class="card">
+        <div class="card-t">Réception</div>
         <div class="row">
           <label for="recDate">Date de réception <span class="req">*</span><input id="recDate" type="date" required></label>
           <label for="recHeure">Heure de réception<input id="recHeure" type="time"></label>
         </div>
-      </fieldset>
+      </section>
 
-      <fieldset>
-        <legend>Réclamant</legend>
+      <section class="card">
+        <div class="card-t">Réclamant</div>
         <label for="nom">Nom et prénom <span class="req">*</span><input id="nom" autocomplete="off" required></label>
         <div class="row">
           <label for="tel">Téléphone<input id="tel" type="tel" inputmode="tel" autocomplete="off" placeholder="facultatif"></label>
           <label for="email">E-mail<input id="email" type="email" autocomplete="off" placeholder="facultatif"></label>
         </div>
-      </fieldset>
+      </section>
 
-      <fieldset>
-        <legend>Localisation GPS</legend>
+      <section class="card">
+        <div class="card-t">Localisation GPS</div>
         <div class="geo">
           <button type="button" class="primary geo-btn" id="btnGeo">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
@@ -121,10 +124,10 @@ button:disabled{opacity:.55;cursor:wait}
           <div class="geo-out" id="geoOut">Aucune position enregistrée.</div>
           <p class="det" id="geoNote">Placez-vous sur le lieu de la fuite puis appuyez sur le bouton.</p>
         </div>
-      </fieldset>
+      </section>
 
-      <fieldset>
-        <legend>Adresse</legend>
+      <section class="card">
+        <div class="card-t">Adresse</div>
         <label for="adresse">Adresse <span class="req">*</span><input id="adresse" autocomplete="off" placeholder="N°, rue, lotissement" required></label>
         <div class="row">
           <label for="quartier">Quartier <span class="req">*</span><input id="quartier" autocomplete="off" required></label>
@@ -132,10 +135,10 @@ button:disabled{opacity:.55;cursor:wait}
         </div>
         <label for="ville">Commune <span class="req">*</span><input id="ville" list="villes" autocomplete="off" required></label>
         <datalist id="villes"><option>Rabat</option><option>Salé</option><option>Témara</option><option>Skhirat</option><option>Harhoura</option><option>Aïn Atiq</option></datalist>
-      </fieldset>
+      </section>
 
-      <fieldset>
-        <legend>Nature de la réclamation</legend>
+      <section class="card">
+        <div class="card-t">Nature de la réclamation</div>
         <label for="nature">Nature <span class="req">*</span>
           <select id="nature" required>
             <option value=""></option>
@@ -237,14 +240,14 @@ button:disabled{opacity:.55;cursor:wait}
             <label><input type="checkbox" name="appel" value="Problème commercial"> Problème commercial</label>
           </div>
         </div>
-      </fieldset>
+      </section>
 
-      <fieldset>
-        <legend>Photo et observations</legend>
+      <section class="card">
+        <div class="card-t">Photo et observations</div>
         <label for="photo">Photo de la fuite / du lieu<input id="photo" type="file" accept="image/*" capture="environment"></label>
         <img id="preview" alt="Aperçu de la photo" hidden>
         <label for="obs">Observations<textarea id="obs" placeholder="Détails donnés par le client"></textarea></label>
-      </fieldset>
+      </section>
 
       <p class="msg" id="msg" role="status"></p>
       <div class="code-box" id="codeBox" hidden>
@@ -259,7 +262,7 @@ button:disabled{opacity:.55;cursor:wait}
     </form>
   </section>
   <p class="privacy">Les réclamations envoyées ne sont pas visibles sur ce formulaire : elles sont transmises directement au responsable, avec votre compte Veolia.</p>
-  <p class="privacy">Version Veolia 10</p>
+  <p class="privacy">Version Veolia 11</p>
 </div>
 
 <script>

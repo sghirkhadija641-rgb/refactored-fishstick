@@ -12,7 +12,7 @@
  * (Exécuter en tant que : Moi ; Qui a accès : Anyone within Veolia).
  */
 
-const VERSION = 'Veolia 10';
+const VERSION = 'Veolia 11';
 const CODE_RE = /^RU-[2-9A-Z]{5}$/;
 const SHEET_NAME = 'Réclamations';
 const FOLDER_NAME = 'Photos réclamations Ré-Use';
