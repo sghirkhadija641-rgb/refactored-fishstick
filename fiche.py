@@ -30,7 +30,7 @@ c.setFont('R', 12); c.setFillColor(muted)
 for i, l in enumerate(["1. Connectez-vous avec votre compte Veolia sur le téléphone.",
                        "2. Sur le lieu, appuyez sur « Enregistrer ma position ».",
                        "3. Remplissez le formulaire et ajoutez une photo.",
-                       "4. Appuyez sur « Envoyer la réclamation » : votre N° Saisie s'affiche."]):
+                       "4. Appuyez sur « Envoyer la réclamation » : un message de confirmation s'affiche."]):
     c.drawString(70, ty-22-i*19, l)
 c.setFont('R', 9); c.drawCentredString(W/2, 22, 'Les réclamations sont transmises uniquement au responsable Ré-Use.')
 c.showPage(); c.save()
