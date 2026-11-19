@@ -367,7 +367,7 @@ $('form').addEventListener('submit',async e=>{
   const b=$('btnSave');b.disabled=true;msg('Envoi en cours…','info');
   try{
     const j=await send(payload);
-    f.reset();setTimeout(()=>msg(j.numero?'Réclamation envoyée. Numéro : '+j.numero:'Réclamation envoyée au responsable.','ok'),10);
+    f.reset();setTimeout(()=>msg(j.numero?'Réclamation envoyée. N° Saisie : '+j.numero:'Réclamation envoyée au responsable.','ok'),10);
   }catch(err){
     if(err.refused){msg('Réclamation refusée : '+err.message,'err')}
     else{const q=queue();q.push(payload);setQueue(q);f.reset();

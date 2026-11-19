@@ -11,7 +11,7 @@
 
 const SHEET_NAME = 'Réclamations';
 const FOLDER_NAME = 'Photos réclamations Ré-Use';
-const HEADERS = ['N° réclamation', 'Date de réception', 'Agent', 'Matricule', 'Nom du réclamant', 'Téléphone', 'E-mail',
+const HEADERS = ['N° Saisie', 'Date de réception', 'Agent', 'Matricule', 'Nom du réclamant', 'Téléphone', 'E-mail',
   'Adresse', 'Quartier', 'Commune', 'Latitude', 'Longitude', 'Précision (m)', 'Carte',
   'Nature', 'Localisation fuite', 'Importance fuite', 'Détail nature', 'Depuis', 'Période', 'CIL', 'Date/heure souhaitée',
   'Observations', 'Aperçu photo', 'Lien photo', 'Statut', 'ID envoi'];
@@ -60,7 +60,7 @@ function envoyer(d) {
     const hasPos = d.lat !== '' && d.lat != null && d.lng !== '' && d.lng != null && isFinite(d.lat) && isFinite(d.lng);
 
     const values = {
-      'N° réclamation': numero, 'Date de réception': new Date(), 'Agent': safe(d.agent), 'Matricule': safe(d.matricule),
+      'N° Saisie': numero, 'Date de réception': new Date(), 'Agent': safe(d.agent), 'Matricule': safe(d.matricule),
       'Nom du réclamant': safe(d.nom), 'Téléphone': safe(d.tel), 'E-mail': safe(d.email),
       'Adresse': safe(d.adresse), 'Quartier': safe(d.quartier), 'Commune': safe(d.ville),
       'Latitude': hasPos ? Number(d.lat) : '', 'Longitude': hasPos ? Number(d.lng) : '',
@@ -131,6 +131,11 @@ function getSheet() {
 // Tableau créé avec une version précédente : ajoute les colonnes manquantes à leur place.
 function mettreAJourColonnes(sh) {
   let head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+  const oldNum = head.indexOf('N° réclamation');
+  if (oldNum >= 0 && head.indexOf('N° Saisie') < 0) {
+    sh.getRange(1, oldNum + 1).setValue('N° Saisie');
+    head[oldNum] = 'N° Saisie';
+  }
   const oldPhoto = head.indexOf('Photo');
   if (oldPhoto >= 0 && head.indexOf('Aperçu photo') < 0) {
     sh.insertColumnBefore(oldPhoto + 1);
