@@ -1,35 +1,34 @@
 /**
  * Réclamations Ré-Use — version compte Veolia.
- * Un seul lien (l'application Web), réservé aux comptes Veolia connectés :
- *  - page d'accueil : l'agent choisit « Saisie d'une réclamation » ou « Traitement » ;
- *  - Saisie (?f=saisie) : enregistre une nouvelle réclamation et donne à l'agent un code de suivi (ex. RU-K7P4Q) ;
- *  - Traitement (?f=traitement) : après l'intervention, l'agent terrain saisit le code de suivi et les
- *    champs de traitement (écran WebSIGID), écrits dans les colonnes « Traitement - … » de la même ligne.
- * Les agents ne voient jamais les réclamations enregistrées.
+ * Deux formulaires servis par ce script, réservés aux comptes Veolia connectés :
+ *  - Saisie (lien de l'application Web) : enregistre une réclamation dans la feuille « Réclamations »
+ *    et donne à l'agent un code de suivi (ex. RU-K7P4Q) ;
+ *  - Traitement (même lien suivi de ?f=traitement) : après l'intervention, l'agent terrain saisit le
+ *    code de suivi et le traitement, enregistré dans la feuille « Traitements ».
+ * Le code de suivi relie les deux feuilles. Les agents ne voient jamais les réclamations enregistrées.
  *
  * Installation : Extensions > Apps Script, coller ce code, enregistrer,
  * puis Déployer > Nouveau déploiement > Application Web
  * (Exécuter en tant que : Moi ; Qui a accès : Anyone within Veolia).
  */
 
-const VERSION = 'Veolia 9';
+const VERSION = 'Veolia 10';
 const CODE_RE = /^RU-[2-9A-Z]{5}$/;
 const SHEET_NAME = 'Réclamations';
 const FOLDER_NAME = 'Photos réclamations Ré-Use';
 const DATE_FMT = 'dd/MM/yyyy HH:mm';
 
-const T = 'Traitement - ';
-const TRAITEMENT_HEADERS = ['Date réception', 'Métier', 'Nature réclamation', 'Type client',
-  'Nom du client', 'CIL', 'Téléphone portable 1', 'Téléphone fixe', 'Nombre de rappels', 'Nombre de photos', 'Photos',
-  'Utilisateur saisie', "Date d'envoi"].map(h => T + h);
-const HEADERS = ['N° Saisie', 'N° de réclamation', 'Code de suivi', 'Date de réception', "Date d'envoi", 'Agent', 'Matricule',
+const TRAITEMENTS_SHEET = 'Traitements';
+const HEADERS = ['N° de réclamation', 'Code de suivi', 'Date de réception', "Date d'envoi", 'Agent', 'Matricule',
   'Nom du réclamant', 'Téléphone', 'E-mail',
-  'Adresse', 'Quartier', 'Commune', 'Latitude', 'Longitude', 'Précision (m)', 'Carte',
+  'Adresse', 'Quartier', 'Secteur', 'Commune', 'Latitude', 'Longitude', 'Précision (m)', 'Carte',
   'Nature', 'Localisation fuite', 'Importance fuite', 'Détail nature', 'Depuis', 'Période', 'CIL', 'Date/heure souhaitée',
-  'Observations', 'Aperçu photo', 'Lien photo', 'Etat de la réclamation']
-  .concat(TRAITEMENT_HEADERS, ['ID envoi']);
-const TEXT_COLS = ['N° de réclamation', 'Code de suivi', 'Matricule', 'CIL', 'Téléphone', 'E-mail', T + 'CIL', T + 'Téléphone portable 1', T + 'Téléphone fixe'];
-const DATE_COLS = ['Date de réception', "Date d'envoi", T + 'Date réception', T + "Date d'envoi"];
+  'Observations', 'Aperçu photo', 'Lien photo', 'Etat de la réclamation', 'ID envoi'];
+const TRAITEMENT_HEADERS = ['Code de suivi', 'Date réception', 'Etat de la réclamation', 'Métier', 'Nature réclamation',
+  'Type client', 'Nom du client', 'CIL', 'Téléphone portable 1', 'Téléphone fixe', 'Nombre de rappels',
+  'Nombre de photos', 'Photos', 'Agent', 'Matricule', 'Compte Veolia', "Date d'envoi"];
+const TEXT_COLS = ['N° de réclamation', 'Code de suivi', 'Matricule', 'CIL', 'Téléphone', 'E-mail', 'Téléphone portable 1', 'Téléphone fixe'];
+const DATE_COLS = ['Date de réception', "Date d'envoi", 'Date réception'];
 const HIDDEN_COLS = ['ID envoi'];
 
 const NATURES = ['Réfection', "Fuite d'eau", "Qualité d'eau", 'Problème de Pression', 'Demande Coupure',
@@ -47,7 +46,7 @@ function doGet(e) {
   }
   const f = e && e.parameter ? e.parameter.f : '';
   const url = ScriptApp.getService().getUrl();
-  const page = f === 'saisie' ? FORM_HTML : f === 'traitement' ? TRAITEMENT_HTML : ACCUEIL_HTML;
+  const page = f === 'traitement' ? TRAITEMENT_HTML : FORM_HTML;
   return HtmlService.createHtmlOutput(page.split('__URL__').join(url))
     .setTitle(f === 'traitement' ? 'Traitement Ré-Use' : 'Réclamations Ré-Use')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
@@ -64,7 +63,7 @@ function envoyer(d) {
     d.agent = [String(d.agent || '').trim(), compte ? '(' + compte + ')' : ''].filter(String).join(' ');
     const reception = parseDateTime(d.reception);
     if (!reception || reception > new Date(Date.now() + 864e5)) return { ok: false, error: 'date de réception manquante ou invalide' };
-    for (const k of ['matricule', 'nom', 'adresse', 'nature']) {
+    for (const k of ['matricule', 'nom', 'adresse', 'quartier', 'secteur', 'ville', 'nature']) {
       if (!d[k] || !String(d[k]).trim()) return { ok: false, error: 'champ manquant (' + k + ')' };
     }
     if (NATURES.indexOf(d.nature) < 0) return { ok: false, error: 'nature inconnue' };
@@ -76,18 +75,17 @@ function envoyer(d) {
     if (d.clientId && sh.getLastRow() > 1) {
       const found = sh.getRange(2, c['ID envoi'], sh.getLastRow() - 1, 1)
         .createTextFinder(String(d.clientId)).matchEntireCell(true).findNext();
-      if (found) return { ok: true, numero: sh.getRange(found.getRow(), c['N° Saisie']).getValue(), doublon: true };
+      if (found) return { ok: true, code: sh.getRange(found.getRow(), c['Code de suivi']).getValue(), doublon: true };
     }
 
-    const numero = 'RU-' + new Date().getFullYear() + '-' + String(sh.getLastRow()).padStart(5, '0');
     const code = CODE_RE.test(String(d.code || '')) ? String(d.code) : nouveauCode();
     const hasPos = d.lat !== '' && d.lat != null && d.lng !== '' && d.lng != null && isFinite(d.lat) && isFinite(d.lng);
 
     const values = {
-      'N° Saisie': numero, 'Code de suivi': code, 'Date de réception': reception, "Date d'envoi": new Date(),
+      'Code de suivi': code, 'Date de réception': reception, "Date d'envoi": new Date(),
       'Agent': safe(d.agent), 'Matricule': safe(d.matricule),
       'Nom du réclamant': safe(d.nom), 'CIL': safe(d.cil), 'Téléphone': safe(d.tel), 'E-mail': safe(d.email),
-      'Adresse': safe(d.adresse), 'Quartier': safe(d.quartier), 'Commune': safe(d.ville),
+      'Adresse': safe(d.adresse), 'Quartier': safe(d.quartier), 'Secteur': safe(d.secteur), 'Commune': safe(d.ville),
       'Latitude': hasPos ? Number(d.lat) : '', 'Longitude': hasPos ? Number(d.lng) : '',
       'Précision (m)': hasPos && isFinite(d.precision) ? Number(d.precision) : '',
       'Nature': d.nature, 'Localisation fuite': safe(d.localisation), 'Importance fuite': safe(d.importance),
@@ -108,19 +106,19 @@ function envoyer(d) {
     // Photo en grand format : rangée dans Google Drive, lien dans le tableau.
     const full = jpeg(d.photo);
     if (full && full.length < 8 * 1024 * 1024) {
-      const file = getFolder().createFile(Utilities.newBlob(full, 'image/jpeg', numero + '.jpg'));
+      const file = getFolder().createFile(Utilities.newBlob(full, 'image/jpeg', code + '.jpg'));
       sh.getRange(row, c['Lien photo']).setRichTextValue(link('Voir la photo', file.getUrl()));
     }
     // Aperçu : petite image posée dans la ligne, visible aussi dans Excel.
     const small = jpeg(d.vignette);
     if (small && small.length < 1.5 * 1024 * 1024) {
       try {
-        placeThumb(sh, row, c['Aperçu photo'], Utilities.newBlob(small, 'image/jpeg', numero + '-apercu.jpg'));
+        placeThumb(sh, row, c['Aperçu photo'], Utilities.newBlob(small, 'image/jpeg', code + '-apercu.jpg'));
       } catch (e) {
         sh.getRange(row, c['Aperçu photo']).setValue('aperçu indisponible');
       }
     }
-    return { ok: true, numero: numero, code: code };
+    return { ok: true, code: code };
   } catch (err) {
     return { ok: false, error: 'erreur du tableau : ' + err.message };
   } finally {
@@ -147,28 +145,34 @@ function enregistrerTraitement(t) {
     if (!row) return { ok: false, error: 'code de suivi inconnu. Vérifiez le code donné lors de la saisie de la réclamation.' };
     const nature = String(sh.getRange(row, c['Nature']).getValue() || '');
 
-    const compte = Session.getActiveUser().getEmail();
+    // État : mis à jour aussi dans la feuille des réclamations.
+    if (c['Etat de la réclamation']) sh.getRange(row, c['Etat de la réclamation']).setValue(t.etat);
+
+    // Une ligne par traitement dans la feuille « Traitements », reliée par le code de suivi.
+    const ts = getSheetFor(TRAITEMENTS_SHEET, TRAITEMENT_HEADERS), tc = cols(ts);
     const photos = (Array.isArray(t.photos) ? t.photos : []).slice(0, 5).map(jpeg).filter(b => b && b.length < 8 * 1024 * 1024);
     const values = {
-      'Date réception': parseDateTime(t.dateReception) || '', 'Métier': 'Ré-Use', 'Nature réclamation': nature,
+      'Code de suivi': code, 'Date réception': parseDateTime(t.dateReception) || '', 'Etat de la réclamation': t.etat,
+      'Métier': 'Ré-Use', 'Nature réclamation': nature,
       'Type client': TYPES_CLIENT.indexOf(t.typeClient) >= 0 ? t.typeClient : '',
       'Nom du client': safe(t.nomClient), 'CIL': safe(t.cil), 'Téléphone portable 1': safe(t.telPortable), 'Téléphone fixe': safe(t.telFixe),
       'Nombre de rappels': Math.max(0, parseInt(t.rappels, 10) || 0), 'Nombre de photos': photos.length,
-      'Utilisateur saisie': safe([String(t.agent).trim(), String(t.matricule).trim(), compte ? '(' + compte + ')' : ''].filter(String).join(' ')),
+      'Agent': safe(t.agent), 'Matricule': safe(t.matricule), 'Compte Veolia': Session.getActiveUser().getEmail(),
       "Date d'envoi": new Date()
     };
-    Object.keys(values).forEach(h => { if (c[T + h]) sh.getRange(row, c[T + h]).setValue(values[h]); });
-    if (c['Etat de la réclamation']) sh.getRange(row, c['Etat de la réclamation']).setValue(t.etat);
+    const line = new Array(ts.getLastColumn()).fill('');
+    Object.keys(values).forEach(h => { if (tc[h]) line[tc[h] - 1] = values[h]; });
+    ts.appendRow(line);
+    const trow = ts.getLastRow();
 
     // Photos : rangées dans Google Drive, un lien par photo dans la même case.
-    if (photos.length && c[T + 'Photos']) {
+    if (photos.length && tc['Photos']) {
       const urls = photos.map((b, i) => getFolder().createFile(Utilities.newBlob(b, 'image/jpeg', code + '-traitement-' + (i + 1) + '.jpg')).getUrl());
       const labels = urls.map((u, i) => 'Photo ' + (i + 1));
-      const text = labels.join('  ');
-      const rt = SpreadsheetApp.newRichTextValue().setText(text);
+      const rt = SpreadsheetApp.newRichTextValue().setText(labels.join('  '));
       let pos = 0;
       labels.forEach((l, i) => { rt.setLinkUrl(pos, pos + l.length, urls[i]); pos += l.length + 2; });
-      sh.getRange(row, c[T + 'Photos']).setRichTextValue(rt.build());
+      ts.getRange(trow, tc['Photos']).setRichTextValue(rt.build());
     }
     return { ok: true };
   } catch (err) {
@@ -220,16 +224,20 @@ function cols(sh) {
 }
 
 function getSheet() {
+  return getSheetFor(SHEET_NAME, HEADERS);
+}
+
+function getSheetFor(name, headers) {
   const ss = SpreadsheetApp.getActive();
-  let sh = ss.getSheetByName(SHEET_NAME);
-  if (!sh) sh = ss.insertSheet(SHEET_NAME);
+  let sh = ss.getSheetByName(name);
+  if (!sh) sh = ss.insertSheet(name);
   if (sh.getLastRow() === 0) {
-    sh.appendRow(HEADERS);
-    styleHeader(sh.getRange(1, 1, 1, HEADERS.length));
+    sh.appendRow(headers);
+    styleHeader(sh.getRange(1, 1, 1, headers.length));
     sh.setFrozenRows(1);
-    HEADERS.forEach((h, i) => formatColumn(sh, i + 1, h));
+    headers.forEach((h, i) => formatColumn(sh, i + 1, h));
   } else {
-    mettreAJourColonnes(sh);
+    mettreAJourColonnes(sh, headers);
   }
   return sh;
 }
@@ -245,14 +253,18 @@ function formatColumn(sh, col, h) {
 }
 
 // Tableau créé avec une version précédente : renomme et ajoute les colonnes manquantes.
-function mettreAJourColonnes(sh) {
+function mettreAJourColonnes(sh, headers) {
   let head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
   const rename = (from, to) => {
     const i = head.indexOf(from);
     if (i >= 0 && head.indexOf(to) < 0) { sh.getRange(1, i + 1).setValue(to); head[i] = to; return i + 1; }
     return 0;
   };
-  rename('N° réclamation', 'N° Saisie');
+  // Le N° Saisie n'est plus utilisé : sa colonne est retirée.
+  ['N° Saisie', 'N° réclamation'].forEach(h => {
+    const i = head.indexOf(h);
+    if (i >= 0 && headers === HEADERS) { sh.deleteColumn(i + 1); head.splice(i, 1); }
+  });
   const etatCol = rename('Statut', 'Etat de la réclamation');
   if (etatCol) {
     if (sh.getLastRow() > 1) {
@@ -270,10 +282,10 @@ function mettreAJourColonnes(sh) {
     sh.setColumnWidth(oldPhoto + 1, 160);
     head.splice(oldPhoto, 1, 'Aperçu photo', 'Lien photo');
   }
-  HEADERS.forEach((h, i) => {
+  headers.forEach((h, i) => {
     if (head.indexOf(h) >= 0) return;
     // Place la colonne juste après la précédente de la liste (ou en fin de tableau).
-    const prev = i > 0 ? head.indexOf(HEADERS[i - 1]) : -1;
+    const prev = i > 0 ? head.indexOf(headers[i - 1]) : -1;
     const at = prev >= 0 ? prev + 2 : head.length + 1;
     if (at <= head.length) sh.insertColumnBefore(at); else sh.insertColumnAfter(head.length);
     sh.getRange(1, at, sh.getMaxRows(), 1).clearDataValidations().setBackground(null).setNumberFormat('General');

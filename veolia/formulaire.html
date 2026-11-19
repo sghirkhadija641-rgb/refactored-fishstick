@@ -33,10 +33,12 @@ header{border-bottom:2px solid var(--fg);padding-bottom:10px}
 h1{font-family:var(--f-display);font-weight:700;font-size:24px;margin:0}
 h1 span{color:var(--accent)}
 .sub{color:var(--muted);margin:2px 0 0;font-size:13px}
-.panel{background:var(--surface);border:1px solid var(--line);border-radius:6px}
-form{padding:14px;display:flex;flex-direction:column;gap:16px}
-fieldset{border:0;padding:0;margin:0;display:flex;flex-direction:column;gap:10px;min-width:0}
-legend,.lg{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;padding:0;margin-bottom:6px}
+.panel{display:flex;flex-direction:column;gap:14px}
+form{display:flex;flex-direction:column;gap:14px}
+fieldset,.card{border:1px solid var(--line);border-radius:10px;padding:14px;margin:0;display:flex;flex-direction:column;gap:10px;min-width:0;background:var(--surface);box-shadow:0 1px 2px rgba(15,60,75,.06)}
+fieldset>legend,.card>.card-t{float:left;width:100%;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;padding:0 0 8px;margin:0 0 2px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
+fieldset>legend::before,.card>.card-t::before{content:"";width:4px;height:14px;border-radius:2px;background:var(--accent)}
+.lg{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);font-weight:700;padding:0;margin-bottom:6px}
 .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media (max-width:460px){.row{grid-template-columns:1fr}}
 label{display:block;font-weight:600;font-size:13px}
@@ -64,7 +66,7 @@ button:disabled{opacity:.55;cursor:wait}
 .msg{font-size:14px;margin:0;padding:10px 12px;border-radius:4px}
 .msg:empty{display:none}
 .msg.ok{color:var(--ok);background:var(--ok-soft)} .msg.err{color:var(--bad);background:var(--bad-soft)} .msg.info{color:var(--warn);background:var(--warn-soft)}
-.agent{display:flex;gap:8px;align-items:center;padding:10px 14px;background:var(--accent-soft);border-bottom:1px solid var(--line);font-size:13px}
+.agent{display:flex;gap:8px;align-items:center;font-size:13px}
 .agent label{white-space:nowrap}
 .agent input{padding:6px 8px;font-size:15px;margin:0}
 .agent-id{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
@@ -84,11 +86,22 @@ button:disabled{opacity:.55;cursor:wait}
   </header>
 
   <section class="panel">
-    <div class="agent agent-id">
-      <label for="agent">Agent <span class="req">*</span><input id="agent" autocomplete="off" placeholder="Votre nom"></label>
-      <label for="matricule">Matricule <span class="req">*</span><input id="matricule" autocomplete="off" inputmode="text" placeholder="Votre matricule"></label>
+    <div class="card">
+      <div class="card-t">Agent</div>
+      <div class="agent agent-id">
+        <label for="agent">Nom de l'agent <span class="req">*</span><input id="agent" autocomplete="off" placeholder="Votre nom"></label>
+        <label for="matricule">Matricule <span class="req">*</span><input id="matricule" autocomplete="off" inputmode="text" placeholder="Votre matricule"></label>
+      </div>
     </div>
     <form id="form" novalidate>
+      <fieldset>
+        <legend>Réception</legend>
+        <div class="row">
+          <label for="recDate">Date de réception <span class="req">*</span><input id="recDate" type="date" required></label>
+          <label for="recHeure">Heure de réception<input id="recHeure" type="time"></label>
+        </div>
+      </fieldset>
+
       <fieldset>
         <legend>Réclamant</legend>
         <label for="nom">Nom et prénom <span class="req">*</span><input id="nom" autocomplete="off" required></label>
@@ -99,7 +112,7 @@ button:disabled{opacity:.55;cursor:wait}
       </fieldset>
 
       <fieldset>
-        <legend>Lieu de la réclamation</legend>
+        <legend>Localisation GPS</legend>
         <div class="geo">
           <button type="button" class="primary geo-btn" id="btnGeo">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
@@ -108,20 +121,21 @@ button:disabled{opacity:.55;cursor:wait}
           <div class="geo-out" id="geoOut">Aucune position enregistrée.</div>
           <p class="det" id="geoNote">Placez-vous sur le lieu de la fuite puis appuyez sur le bouton.</p>
         </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Adresse</legend>
         <label for="adresse">Adresse <span class="req">*</span><input id="adresse" autocomplete="off" placeholder="N°, rue, lotissement" required></label>
         <div class="row">
-          <label for="quartier">Quartier / secteur<input id="quartier" autocomplete="off"></label>
-          <label for="ville">Commune<input id="ville" list="villes" autocomplete="off"></label>
+          <label for="quartier">Quartier <span class="req">*</span><input id="quartier" autocomplete="off" required></label>
+          <label for="secteur">Secteur <span class="req">*</span><input id="secteur" autocomplete="off" required></label>
         </div>
+        <label for="ville">Commune <span class="req">*</span><input id="ville" list="villes" autocomplete="off" required></label>
         <datalist id="villes"><option>Rabat</option><option>Salé</option><option>Témara</option><option>Skhirat</option><option>Harhoura</option><option>Aïn Atiq</option></datalist>
       </fieldset>
 
       <fieldset>
-        <legend>Réclamation</legend>
-        <div class="row">
-          <label for="recDate">Date de réception <span class="req">*</span><input id="recDate" type="date" required></label>
-          <label for="recHeure">Heure de réception<input id="recHeure" type="time"></label>
-        </div>
+        <legend>Nature de la réclamation</legend>
         <label for="nature">Nature <span class="req">*</span>
           <select id="nature" required>
             <option value=""></option>
@@ -223,6 +237,10 @@ button:disabled{opacity:.55;cursor:wait}
             <label><input type="checkbox" name="appel" value="Problème commercial"> Problème commercial</label>
           </div>
         </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Photo et observations</legend>
         <label for="photo">Photo de la fuite / du lieu<input id="photo" type="file" accept="image/*" capture="environment"></label>
         <img id="preview" alt="Aperçu de la photo" hidden>
         <label for="obs">Observations<textarea id="obs" placeholder="Détails donnés par le client"></textarea></label>
@@ -241,7 +259,7 @@ button:disabled{opacity:.55;cursor:wait}
     </form>
   </section>
   <p class="privacy">Les réclamations envoyées ne sont pas visibles sur ce formulaire : elles sont transmises directement au responsable, avec votre compte Veolia.</p>
-  <p class="privacy">Version Veolia 9</p>
+  <p class="privacy">Version Veolia 10</p>
 </div>
 
 <script>
@@ -355,7 +373,7 @@ $('form').addEventListener('submit',async e=>{
   e.preventDefault();
   const v=id=>($(id).value||'').trim(),f=$('form');
   if(!ENDPOINT)return msg("Ce formulaire n'est pas encore relié au tableau du responsable.",'err');
-  const miss=[];if(!v('recDate'))miss.push('date de réception');if(!v('agent'))miss.push('nom de l’agent');if(!v('matricule'))miss.push('matricule');if(!v('nom'))miss.push('nom du réclamant');if(!v('adresse'))miss.push('adresse');if(!v('nature'))miss.push('nature');
+  const miss=[];if(!v('recDate'))miss.push('date de réception');if(!v('agent'))miss.push('nom de l’agent');if(!v('matricule'))miss.push('matricule');if(!v('nom'))miss.push('nom du réclamant');if(!v('adresse'))miss.push('adresse');if(!v('quartier'))miss.push('quartier');if(!v('secteur'))miss.push('secteur');if(!v('ville'))miss.push('commune');if(!v('nature'))miss.push('nature');
   if(miss.length)return msg('Champ obligatoire manquant : '+miss.join(', ')+'.','err');
   if(v('tel')&&(v('tel').match(/\d/g)||[]).length<8)return msg('Le numéro de téléphone semble incomplet (8 chiffres minimum).','err');
   const fuite=v('nature')==="Fuite d'eau";
@@ -372,7 +390,7 @@ $('form').addEventListener('submit',async e=>{
   if(nat==='Problème de Pression'){detail=f.elements.pression.value;if(!detail)return msg('Indiquez la nature du défaut de pression.','err');depuis=v('pressionDepuis');periode=v('pressionPeriode')}
   const code=codeSuivi();
   const payload={code,clientId:(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random()),saisieLe:new Date().toISOString(),
-    reception:v('recDate')+(v('recHeure')?'T'+v('recHeure'):''),agent:v('agent'),matricule:v('matricule'),nom:v('nom'),tel:v('tel'),email:v('email'),adresse:v('adresse'),quartier:v('quartier'),ville:v('ville'),
+    reception:v('recDate')+(v('recHeure')?'T'+v('recHeure'):''),agent:v('agent'),matricule:v('matricule'),nom:v('nom'),tel:v('tel'),email:v('email'),adresse:v('adresse'),quartier:v('quartier'),secteur:v('secteur'),ville:v('ville'),
     lat:pos?pos.lat:'',lng:pos?pos.lng:'',precision:pos?Math.round(pos.acc):'',
     nature:v('nature'),localisation:fuite?f.elements.loc.value:'',importance:fuite?(f.elements.imp.value||''):'',detail,depuis,periode,cil,souhaite,obs:v('obs'),photo:photoData,vignette:thumbData};
   const b=$('btnSave');b.disabled=true;msg('Envoi en cours…','info');$('codeBox').hidden=true;

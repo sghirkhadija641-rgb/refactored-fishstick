@@ -4,6 +4,5 @@ d = pathlib.Path(__file__).parent
 code = (d / 'code-modele.gs').read_text(encoding='utf8')
 html = (d / 'formulaire.html').read_text(encoding='utf8')
 traitement = (d / 'traitement.html').read_text(encoding='utf8')
-accueil = (d / 'accueil.html').read_text(encoding='utf8')
-(d / 'Code.gs').write_text(code.rstrip() + '\n\n// Formulaire affiché aux agents (généré depuis veolia/formulaire.html).\nconst FORM_HTML = ' + json.dumps(html, ensure_ascii=False) + ';\n\n// Formulaire de traitement (généré depuis veolia/traitement.html).\nconst TRAITEMENT_HTML = ' + json.dumps(traitement, ensure_ascii=False) + ';\n\n// Page d\'accueil : choix entre saisie et traitement (généré depuis veolia/accueil.html).\nconst ACCUEIL_HTML = ' + json.dumps(accueil, ensure_ascii=False) + ';\n', encoding='utf8')
+(d / 'Code.gs').write_text(code.rstrip() + '\n\n// Formulaire affiché aux agents (généré depuis veolia/formulaire.html).\nconst FORM_HTML = ' + json.dumps(html, ensure_ascii=False) + ';\n\n// Formulaire de traitement (généré depuis veolia/traitement.html).\nconst TRAITEMENT_HTML = ' + json.dumps(traitement, ensure_ascii=False) + ';\n', encoding='utf8')
 print('Code.gs :', len((d / 'Code.gs').read_text(encoding='utf8')), 'caractères')
