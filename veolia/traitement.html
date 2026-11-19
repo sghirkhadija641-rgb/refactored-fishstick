@@ -110,7 +110,6 @@ button:disabled{opacity:.55;cursor:wait}
           <div><label>Métier</label><div class="fixed">Ré-Use</div></div>
           <div><label>Nature réclamation</label><div class="fixed" id="natureVal">—</div></div>
         </div>
-        <label for="objet">Objet préliminaire<input id="objet" autocomplete="off"></label>
       </fieldset>
 
       <fieldset>
@@ -149,7 +148,7 @@ button:disabled{opacity:.55;cursor:wait}
     </form>
   </section>
   <p class="privacy">Le traitement est transmis directement au responsable, avec votre compte Veolia.</p>
-  <p class="privacy">Traitement — Version Veolia 8</p>
+  <p class="privacy">Traitement — Version Veolia 9</p>
 </div>
 
 <script>
@@ -211,7 +210,7 @@ $('form').addEventListener('submit',async e=>{
   if(!/^RU-[2-9A-Z]{5}$/.test(code))return msg('Le code de suivi doit ressembler à RU-K7P4Q.','err');
   if(code!==codeVerifie||!natureCode)return msg('Code de suivi inconnu : vérifiez le code donné lors de la saisie.','err');
   const payload={code,agent:v('agent'),matricule:v('matricule'),dateReception:v('dateReception'),
-    etat:v('etat'),nature:natureCode,objet:v('objet'),typeClient:v('typeClient'),nomClient:v('nomClient'),cil:v('cil'),
+    etat:v('etat'),nature:natureCode,typeClient:v('typeClient'),nomClient:v('nomClient'),cil:v('cil'),
     telPortable:v('telPortable'),telFixe:v('telFixe'),rappels:v('rappels'),photos};
   const b=$('btnSave');b.disabled=true;msg('Envoi en cours…','info');
   try{
