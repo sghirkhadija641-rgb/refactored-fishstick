@@ -12,7 +12,7 @@
  * (Exécuter en tant que : Moi ; Qui a accès : Anyone within Veolia).
  */
 
-const VERSION = 'Veolia 11';
+const VERSION = 'Veolia 12';
 const CODE_RE = /^RU-[2-9A-Z]{5}$/;
 const SHEET_NAME = 'Réclamations';
 const FOLDER_NAME = 'Photos réclamations Ré-Use';
@@ -24,7 +24,7 @@ const HEADERS = ['N° de réclamation', 'Code de suivi', 'Date de réception', "
   'Adresse', 'Quartier', 'Secteur', 'Commune', 'Latitude', 'Longitude', 'Précision (m)', 'Carte',
   'Nature', 'Localisation fuite', 'Importance fuite', 'Détail nature', 'Depuis', 'Période', 'CIL', 'Date/heure souhaitée',
   'Observations', 'Aperçu photo', 'Lien photo', 'Etat de la réclamation', 'ID envoi'];
-const TRAITEMENT_HEADERS = ['Code de suivi', 'Date réception', 'Etat de la réclamation', 'Métier', 'Nature réclamation',
+const TRAITEMENT_HEADERS = ['N° de réclamation', 'Code de suivi', 'Date réception', 'Etat de la réclamation', 'Métier', 'Nature réclamation',
   'Type client', 'Nom du client', 'CIL', 'Téléphone portable 1', 'Téléphone fixe', 'Nombre de rappels',
   'Nombre de photos', 'Photos', 'Agent', 'Matricule', 'Compte Veolia', "Date d'envoi"];
 const TEXT_COLS = ['N° de réclamation', 'Code de suivi', 'Matricule', 'CIL', 'Téléphone', 'E-mail', 'Téléphone portable 1', 'Téléphone fixe'];
@@ -164,6 +164,7 @@ function enregistrerTraitement(t) {
     Object.keys(values).forEach(h => { if (tc[h]) line[tc[h] - 1] = values[h]; });
     ts.appendRow(line);
     const trow = ts.getLastRow();
+    lierNumeroReclamation(ts, trow, trow);
 
     // Photos : rangées dans Google Drive, un lien par photo dans la même case.
     if (photos.length && tc['Photos']) {
@@ -286,7 +287,7 @@ function mettreAJourColonnes(sh, headers) {
     if (head.indexOf(h) >= 0) return;
     // Place la colonne juste après la précédente de la liste (ou en fin de tableau).
     const prev = i > 0 ? head.indexOf(headers[i - 1]) : -1;
-    const at = prev >= 0 ? prev + 2 : head.length + 1;
+    const at = i === 0 ? 1 : prev >= 0 ? prev + 2 : head.length + 1;
     if (at <= head.length) sh.insertColumnBefore(at); else sh.insertColumnAfter(head.length);
     sh.getRange(1, at, sh.getMaxRows(), 1).clearDataValidations().setBackground(null).setNumberFormat('General');
     sh.showColumns(at);
@@ -294,7 +295,24 @@ function mettreAJourColonnes(sh, headers) {
     styleHeader(sh.getRange(1, at));
     formatColumn(sh, at, h);
     head.splice(at - 1, 0, h);
+    if (headers === TRAITEMENT_HEADERS && h === 'N° de réclamation') lierNumeroReclamation(sh, 2, sh.getLastRow());
   });
+}
+
+// Feuille « Traitements » : le N° de réclamation est repris de la feuille « Réclamations »
+// par une formule (recherche du code de suivi). Il se met à jour dès que le numéro y est saisi.
+function lierNumeroReclamation(ts, from, to) {
+  if (to < from || to < 2) return;
+  const rs = getSheet(), rc = cols(rs), tc = cols(ts);
+  if (!rc['N° de réclamation'] || !rc['Code de suivi'] || !tc['N° de réclamation'] || !tc['Code de suivi']) return;
+  const L = n => { let s = ''; while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); } return s; };
+  const ref = "'" + SHEET_NAME.replace(/'/g, "''") + "'!";
+  const num = ref + L(rc['N° de réclamation']) + ':' + L(rc['N° de réclamation']);
+  const cod = ref + L(rc['Code de suivi']) + ':' + L(rc['Code de suivi']);
+  const key = L(tc['Code de suivi']);
+  const f = [];
+  for (let r = Math.max(from, 2); r <= to; r++) f.push(['=IFERROR(INDEX(' + num + ',MATCH(' + key + r + ',' + cod + ',0))&"","")']);
+  ts.getRange(Math.max(from, 2), tc['N° de réclamation'], f.length, 1).setFormulas(f);
 }
 
 function styleHeader(range) {
