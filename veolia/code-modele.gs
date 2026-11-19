@@ -11,7 +11,7 @@
 
 const SHEET_NAME = 'Réclamations';
 const FOLDER_NAME = 'Photos réclamations Ré-Use';
-const HEADERS = ['N° Saisie', 'N° de réclamation', 'Date de réception', 'Agent', 'Matricule', 'Nom du réclamant', 'Téléphone', 'E-mail',
+const HEADERS = ['N° Saisie', 'N° de réclamation', 'Date de réception', "Date d'envoi", 'Agent', 'Matricule', 'Nom du réclamant', 'Téléphone', 'E-mail',
   'Adresse', 'Quartier', 'Commune', 'Latitude', 'Longitude', 'Précision (m)', 'Carte',
   'Nature', 'Localisation fuite', 'Importance fuite', 'Détail nature', 'Depuis', 'Période', 'CIL', 'Date/heure souhaitée',
   'Observations', 'Aperçu photo', 'Lien photo', 'Statut', 'ID envoi'];
@@ -40,6 +40,8 @@ function envoyer(d) {
     lock.waitLock(25000);
     const compte = Session.getActiveUser().getEmail();
     d.agent = [String(d.agent || '').trim(), compte ? '(' + compte + ')' : ''].filter(String).join(' ');
+    const reception = parseReception(d.reception);
+    if (!reception) return ({ ok: false, error: 'date de réception manquante ou invalide' });
     for (const k of ['matricule', 'nom', 'adresse', 'nature']) {
       if (!d[k] || !String(d[k]).trim()) return ({ ok: false, error: 'champ manquant (' + k + ')' });
     }
@@ -60,7 +62,7 @@ function envoyer(d) {
     const hasPos = d.lat !== '' && d.lat != null && d.lng !== '' && d.lng != null && isFinite(d.lat) && isFinite(d.lng);
 
     const values = {
-      'N° Saisie': numero, 'Date de réception': new Date(), 'Agent': safe(d.agent), 'Matricule': safe(d.matricule),
+      'N° Saisie': numero, 'Date de réception': reception, "Date d'envoi": new Date(), 'Agent': safe(d.agent), 'Matricule': safe(d.matricule),
       'Nom du réclamant': safe(d.nom), 'Téléphone': safe(d.tel), 'E-mail': safe(d.email),
       'Adresse': safe(d.adresse), 'Quartier': safe(d.quartier), 'Commune': safe(d.ville),
       'Latitude': hasPos ? Number(d.lat) : '', 'Longitude': hasPos ? Number(d.lng) : '',
@@ -114,7 +116,7 @@ function getSheet() {
     sh.appendRow(HEADERS);
     styleHeader(sh.getRange(1, 1, 1, HEADERS.length));
     sh.setFrozenRows(1);
-    sh.getRange(2, HEADERS.indexOf('Date de réception') + 1, sh.getMaxRows() - 1, 1).setNumberFormat('dd/MM/yyyy HH:mm');
+    sh.getRange(2, HEADERS.indexOf('Date de réception') + 1, sh.getMaxRows() - 1, 2).setNumberFormat('dd/MM/yyyy HH:mm');
     sh.getRange(2, HEADERS.indexOf('N° de réclamation') + 1, sh.getMaxRows() - 1, 1).setNumberFormat('@');
     sh.getRange(2, COL.tel, sh.getMaxRows() - 1, 2).setNumberFormat('@');
     sh.getRange(2, COL.matricule, sh.getMaxRows() - 1, 1).setNumberFormat('@');
@@ -150,6 +152,7 @@ function mettreAJourColonnes(sh) {
     sh.insertColumnBefore(i + 1);
     sh.getRange(1, i + 1).setValue(h);
     if (h === 'N° de réclamation') sh.getRange(1, i + 1, sh.getMaxRows(), 1).setBackground(null).setNumberFormat('@');
+    if (h === "Date d'envoi") sh.getRange(1, i + 1, sh.getMaxRows(), 1).setBackground(null).setNumberFormat('dd/MM/yyyy HH:mm');
     styleHeader(sh.getRange(1, i + 1));
     sh.showColumns(i + 1);
     head.splice(i, 0, h);
@@ -211,6 +214,15 @@ function addThumb(sh, row, driveUrl) {
     img.setWidth(150).setHeight(Math.round(150 * ratio));
     sh.setRowHeight(row, Math.round(150 * ratio) + 10);
   } catch (e) {}
+}
+
+// Date et heure de réception saisies par l'agent (format AAAA-MM-JJTHH:MM).
+function parseReception(s) {
+  const m = String(s || '').match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2}):(\d{2}))?$/);
+  if (!m) return null;
+  const dt = new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0));
+  if (isNaN(dt) || dt.getMonth() !== +m[2] - 1 || dt > new Date(Date.now() + 36e5 * 24)) return null;
+  return dt;
 }
 
 function link(text, url) {

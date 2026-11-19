@@ -114,6 +114,10 @@ button:disabled{opacity:.55;cursor:wait}
 
       <fieldset>
         <legend>Réclamation</legend>
+        <div class="row">
+          <label for="recDate">Date de réception <span class="req">*</span><input id="recDate" type="date" required></label>
+          <label for="recHeure">Heure de réception<input id="recHeure" type="time"></label>
+        </div>
         <label for="nature">Nature <span class="req">*</span>
           <select id="nature" required>
             <option value=""></option>
@@ -228,7 +232,7 @@ button:disabled{opacity:.55;cursor:wait}
     </form>
   </section>
   <p class="privacy">Les réclamations envoyées ne sont pas visibles sur ce formulaire : elles sont transmises directement au responsable, avec votre compte Veolia.</p>
-  <p class="privacy">Version Veolia 3</p>
+  <p class="privacy">Version Veolia 4</p>
 </div>
 
 <script>
@@ -277,7 +281,9 @@ const frDate=s=>s?s.split('-').reverse().join('/'):'';
 const dateHeure=(d,h)=>[frDate(d),h].filter(Boolean).join(' à ');
 function showBoxes(){const n=$('nature').value;Object.entries(BOXES).forEach(([k,id])=>{$(id).hidden=n!==k})}
 $('nature').addEventListener('change',showBoxes);
-$('form').addEventListener('reset',()=>setTimeout(()=>{showBoxes();$('preview').hidden=true;photoData='';thumbData='';pos=null;showPos();$('geoNote').textContent='Placez-vous sur le lieu de la fuite puis appuyez sur le bouton.'},0));
+function nowFields(){const d=new Date(),p=n=>String(n).padStart(2,'0');$('recDate').value=d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());$('recHeure').value=p(d.getHours())+':'+p(d.getMinutes());$('recDate').max=$('recDate').value}
+nowFields();
+$('form').addEventListener('reset',()=>setTimeout(()=>{nowFields();showBoxes();$('preview').hidden=true;photoData='';thumbData='';pos=null;showPos();$('geoNote').textContent='Placez-vous sur le lieu de la fuite puis appuyez sur le bouton.'},0));
 function shrink(file,max=1280){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(img.src);res(c.toDataURL('image/jpeg',0.75))};img.onerror=()=>rej(new Error('image'));img.src=URL.createObjectURL(file)})}
 /* Position lue dans la photo (si le GPS du formulaire n'a pas pu être utilisé) */
 function gpsFromJpeg(buf){
@@ -340,7 +346,7 @@ $('form').addEventListener('submit',async e=>{
   e.preventDefault();
   const v=id=>($(id).value||'').trim(),f=$('form');
   if(!ENDPOINT)return msg("Ce formulaire n'est pas encore relié au tableau du responsable.",'err');
-  const miss=[];if(!v('agent'))miss.push('nom de l’agent');if(!v('matricule'))miss.push('matricule');if(!v('nom'))miss.push('nom du réclamant');if(!v('adresse'))miss.push('adresse');if(!v('nature'))miss.push('nature');
+  const miss=[];if(!v('recDate'))miss.push('date de réception');if(!v('agent'))miss.push('nom de l’agent');if(!v('matricule'))miss.push('matricule');if(!v('nom'))miss.push('nom du réclamant');if(!v('adresse'))miss.push('adresse');if(!v('nature'))miss.push('nature');
   if(miss.length)return msg('Champ obligatoire manquant : '+miss.join(', ')+'.','err');
   if(v('tel')&&(v('tel').match(/\d/g)||[]).length<8)return msg('Le numéro de téléphone semble incomplet (8 chiffres minimum).','err');
   const fuite=v('nature')==="Fuite d'eau";
@@ -356,7 +362,7 @@ $('form').addEventListener('submit',async e=>{
   if(nat==="Qualité d'eau"){detail=[...f.querySelectorAll('input[name=qualite]:checked')].map(x=>x.value).join(', ');if(!detail)return msg('Cochez la nature du défaut qualité.','err');depuis=v('qualiteDepuis');periode=v('qualitePeriode')}
   if(nat==='Problème de Pression'){detail=f.elements.pression.value;if(!detail)return msg('Indiquez la nature du défaut de pression.','err');depuis=v('pressionDepuis');periode=v('pressionPeriode')}
   const payload={clientId:(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random()),saisieLe:new Date().toISOString(),
-    agent:v('agent'),matricule:v('matricule'),nom:v('nom'),tel:v('tel'),email:v('email'),adresse:v('adresse'),quartier:v('quartier'),ville:v('ville'),
+    reception:v('recDate')+(v('recHeure')?'T'+v('recHeure'):''),agent:v('agent'),matricule:v('matricule'),nom:v('nom'),tel:v('tel'),email:v('email'),adresse:v('adresse'),quartier:v('quartier'),ville:v('ville'),
     lat:pos?pos.lat:'',lng:pos?pos.lng:'',precision:pos?Math.round(pos.acc):'',
     nature:v('nature'),localisation:fuite?f.elements.loc.value:'',importance:fuite?(f.elements.imp.value||''):'',detail,depuis,periode,cil,souhaite,obs:v('obs'),photo:photoData,vignette:thumbData};
   const b=$('btnSave');b.disabled=true;msg('Envoi en cours…','info');
