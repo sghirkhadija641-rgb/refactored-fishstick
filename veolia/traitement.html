@@ -96,10 +96,7 @@ button:disabled{opacity:.55;cursor:wait}
         <legend>Réclamation</legend>
         <label for="code">Code de suivi <span class="req">*</span><input id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ex. RU-K7P4Q (donné à la saisie)"></label>
         <p class="det" id="codeNote">La nature de la réclamation s'affichera dès que le code est saisi.</p>
-        <div class="row">
-          <label for="numReclamation">N° Réclamation<input id="numReclamation" autocomplete="off" placeholder="N° WebSIGID"></label>
-          <label for="dateReception">Date réception<input id="dateReception" type="date"></label>
-        </div>
+        <label for="dateReception">Date réception<input id="dateReception" type="date"></label>
         <label for="etat">Etat de la réclamation <span class="req">*</span>
           <select id="etat">
             <option value=""></option>
@@ -137,22 +134,6 @@ button:disabled{opacity:.55;cursor:wait}
       </fieldset>
 
       <fieldset>
-        <legend>Adresse</legend>
-        <div class="row">
-          <label for="prefecture">Préfecture<input id="prefecture" autocomplete="off" list="prefectures"></label>
-          <label for="commune">Commune<input id="commune" autocomplete="off" list="communes"></label>
-        </div>
-        <datalist id="prefectures"><option>Rabat</option><option>Salé</option><option>Skhirat-Témara</option></datalist>
-        <datalist id="communes"><option>Rabat</option><option>Salé</option><option>Témara</option><option>Skhirat</option><option>Harhoura</option><option>Aïn Atiq</option></datalist>
-        <div class="row">
-          <label for="quartier">Quartier<input id="quartier" autocomplete="off"></label>
-          <label for="sousQuartier">Sous-quartier<input id="sousQuartier" autocomplete="off"></label>
-        </div>
-        <label for="rue">Rue<input id="rue" autocomplete="off"></label>
-        <label for="adresse">Adresse de la réclamation<input id="adresse" autocomplete="off"></label>
-      </fieldset>
-
-      <fieldset>
         <legend>Suivi</legend>
         <label for="rappels">Nombre de rappels<input id="rappels" type="number" min="0" step="1" inputmode="numeric" value="0"></label>
         <label for="photos">Photos (jusqu'à 5)<input id="photos" type="file" accept="image/*" multiple></label>
@@ -168,7 +149,7 @@ button:disabled{opacity:.55;cursor:wait}
     </form>
   </section>
   <p class="privacy">Le traitement est transmis directement au responsable, avec votre compte Veolia.</p>
-  <p class="privacy">Traitement — Version Veolia 7</p>
+  <p class="privacy">Traitement — Version Veolia 8</p>
 </div>
 
 <script>
@@ -229,9 +210,8 @@ $('form').addEventListener('submit',async e=>{
   let code=v('code').toUpperCase().replace(/\s+/g,'');if(code&&!code.startsWith('RU-'))code='RU-'+code.replace(/^RU/,'');
   if(!/^RU-[2-9A-Z]{5}$/.test(code))return msg('Le code de suivi doit ressembler à RU-K7P4Q.','err');
   if(code!==codeVerifie||!natureCode)return msg('Code de suivi inconnu : vérifiez le code donné lors de la saisie.','err');
-  const payload={code,agent:v('agent'),matricule:v('matricule'),numReclamation:v('numReclamation'),dateReception:v('dateReception'),
+  const payload={code,agent:v('agent'),matricule:v('matricule'),dateReception:v('dateReception'),
     etat:v('etat'),nature:natureCode,objet:v('objet'),typeClient:v('typeClient'),nomClient:v('nomClient'),cil:v('cil'),
-    prefecture:v('prefecture'),commune:v('commune'),quartier:v('quartier'),sousQuartier:v('sousQuartier'),rue:v('rue'),adresse:v('adresse'),
     telPortable:v('telPortable'),telFixe:v('telFixe'),rappels:v('rappels'),photos};
   const b=$('btnSave');b.disabled=true;msg('Envoi en cours…','info');
   try{

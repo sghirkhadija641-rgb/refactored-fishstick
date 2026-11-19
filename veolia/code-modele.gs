@@ -12,7 +12,7 @@
  * (Exécuter en tant que : Moi ; Qui a accès : Anyone within Veolia).
  */
 
-const VERSION = 'Veolia 7';
+const VERSION = 'Veolia 8';
 const CODE_RE = /^RU-[2-9A-Z]{5}$/;
 const SHEET_NAME = 'Réclamations';
 const FOLDER_NAME = 'Photos réclamations Ré-Use';
@@ -20,8 +20,7 @@ const DATE_FMT = 'dd/MM/yyyy HH:mm';
 
 const T = 'Traitement - ';
 const TRAITEMENT_HEADERS = ['Date réception', 'Métier', 'Nature réclamation', 'Objet préliminaire', 'Type client',
-  'Nom du client', 'CIL', 'Préfecture', 'Commune', 'Quartier', 'Sous-quartier', 'Rue', 'Adresse de la réclamation',
-  'Téléphone portable 1', 'Téléphone fixe', 'Nombre de rappels', 'Nombre de photos', 'Photos',
+  'Nom du client', 'CIL', 'Téléphone portable 1', 'Téléphone fixe', 'Nombre de rappels', 'Nombre de photos', 'Photos',
   'Utilisateur saisie', "Date d'envoi"].map(h => T + h);
 const HEADERS = ['N° Saisie', 'N° de réclamation', 'Code de suivi', 'Date de réception', "Date d'envoi", 'Agent', 'Matricule',
   'Nom du réclamant', 'Téléphone', 'E-mail',
@@ -147,17 +146,13 @@ function enregistrerTraitement(t) {
     const row = trouverLigne(sh, c, code, 'Code de suivi');
     if (!row) return { ok: false, error: 'code de suivi inconnu. Vérifiez le code donné lors de la saisie de la réclamation.' };
     const nature = String(sh.getRange(row, c['Nature']).getValue() || '');
-    const num = String(t.numReclamation || '').trim();
-    if (num && c['N° de réclamation']) sh.getRange(row, c['N° de réclamation']).setValue(safe(num));
 
     const compte = Session.getActiveUser().getEmail();
     const photos = (Array.isArray(t.photos) ? t.photos : []).slice(0, 5).map(jpeg).filter(b => b && b.length < 8 * 1024 * 1024);
     const values = {
       'Date réception': parseDateTime(t.dateReception) || '', 'Métier': 'Ré-Use', 'Nature réclamation': nature,
       'Objet préliminaire': safe(t.objet), 'Type client': TYPES_CLIENT.indexOf(t.typeClient) >= 0 ? t.typeClient : '',
-      'Nom du client': safe(t.nomClient), 'CIL': safe(t.cil), 'Préfecture': safe(t.prefecture), 'Commune': safe(t.commune),
-      'Quartier': safe(t.quartier), 'Sous-quartier': safe(t.sousQuartier), 'Rue': safe(t.rue),
-      'Adresse de la réclamation': safe(t.adresse), 'Téléphone portable 1': safe(t.telPortable), 'Téléphone fixe': safe(t.telFixe),
+      'Nom du client': safe(t.nomClient), 'CIL': safe(t.cil), 'Téléphone portable 1': safe(t.telPortable), 'Téléphone fixe': safe(t.telFixe),
       'Nombre de rappels': Math.max(0, parseInt(t.rappels, 10) || 0), 'Nombre de photos': photos.length,
       'Utilisateur saisie': safe([String(t.agent).trim(), String(t.matricule).trim(), compte ? '(' + compte + ')' : ''].filter(String).join(' ')),
       "Date d'envoi": new Date()
