@@ -23,6 +23,9 @@
   color-scheme:dark}}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
+.code-box{border:2px solid var(--accent);border-radius:6px;padding:12px;display:flex;flex-direction:column;gap:6px;background:var(--accent-soft)}
+.code-box .code{font-family:var(--f-mono);font-size:26px;font-weight:700;letter-spacing:.08em;color:var(--accent)}
+.code-box .row-c{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
 html,body{margin:0}
 body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.45}
 .wrap{max-width:560px;margin:0 auto;padding:16px max(14px,env(safe-area-inset-right)) 40px max(14px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:14px}
@@ -89,16 +92,6 @@ button:disabled{opacity:.55;cursor:wait}
       <fieldset>
         <legend>Réclamant</legend>
         <label for="nom">Nom et prénom <span class="req">*</span><input id="nom" autocomplete="off" required></label>
-        <div class="row">
-          <label for="typeClient">Type client
-            <select id="typeClient">
-              <option>Particulier</option><option>Autorité</option><option>Communes</option><option>Elus</option>
-              <option>Résidences Royales</option><option>Industriels</option><option>V.I.P</option><option>GC-Entreprises</option>
-              <option>Planifié</option><option>GC-Administrations</option><option>Numéro Vert</option>
-            </select>
-          </label>
-          <label for="cil">CIL<input id="cil" autocomplete="off" inputmode="numeric" placeholder="facultatif"></label>
-        </div>
         <div class="row">
           <label for="tel">Téléphone<input id="tel" type="tel" inputmode="tel" autocomplete="off" placeholder="facultatif"></label>
           <label for="email">E-mail<input id="email" type="email" autocomplete="off" placeholder="facultatif"></label>
@@ -195,14 +188,16 @@ button:disabled{opacity:.55;cursor:wait}
         </div>
         <div class="fuite" id="coupureBox" hidden>
           <div class="lg">Demande de coupure</div>
-          <div class="row">
+          <label for="coupureCil">CIL<input id="coupureCil" autocomplete="off" inputmode="numeric" placeholder="N° CIL du client"></label>
+          <div class="row" style="margin-top:10px">
             <label for="coupureDate">Date souhaitée<input id="coupureDate" type="date"></label>
             <label for="coupureHeure">Heure souhaitée<input id="coupureHeure" type="time"></label>
           </div>
         </div>
         <div class="fuite" id="rebranchementBox" hidden>
           <div class="lg">Demande de rebranchement</div>
-          <div class="row">
+          <label for="rebranchementCil">CIL<input id="rebranchementCil" autocomplete="off" inputmode="numeric" placeholder="N° CIL du client"></label>
+          <div class="row" style="margin-top:10px">
             <label for="rebranchementDate">Date souhaitée<input id="rebranchementDate" type="date"></label>
             <label for="rebranchementHeure">Heure souhaitée<input id="rebranchementHeure" type="time"></label>
           </div>
@@ -234,6 +229,11 @@ button:disabled{opacity:.55;cursor:wait}
       </fieldset>
 
       <p class="msg" id="msg" role="status"></p>
+      <div class="code-box" id="codeBox" hidden>
+        <span>Code de suivi de la réclamation :</span>
+        <div class="row-c"><span class="code" id="codeVal"></span><button type="button" id="btnCopy">Copier</button></div>
+        <p class="det">Notez ce code : il sera demandé dans le formulaire de traitement.</p>
+      </div>
       <div class="actions">
         <button type="submit" class="primary" id="btnSave">Envoyer la réclamation</button>
         <button type="reset">Effacer</button>
@@ -241,7 +241,7 @@ button:disabled{opacity:.55;cursor:wait}
     </form>
   </section>
   <p class="privacy">Les réclamations envoyées ne sont pas visibles sur ce formulaire : elles sont transmises directement au responsable, avec votre compte Veolia.</p>
-  <p class="privacy">Version Veolia 5</p>
+  <p class="privacy">Version Veolia 6</p>
 </div>
 
 <script>
@@ -360,31 +360,46 @@ $('form').addEventListener('submit',async e=>{
   if(v('tel')&&(v('tel').match(/\d/g)||[]).length<8)return msg('Le numéro de téléphone semble incomplet (8 chiffres minimum).','err');
   const fuite=v('nature')==="Fuite d'eau";
   if(fuite&&!f.elements.loc.value)return msg('Indiquez la localisation de la fuite.','err');
-  const nat=v('nature');let detail='',depuis='',periode='',souhaite='';const cil=v('cil');
+  const nat=v('nature');let detail='',depuis='',periode='',cil='',souhaite='';
   const checked=n=>[...f.querySelectorAll('input[name='+n+']:checked')].map(x=>x.value).join(', ');
-  if(nat==='Demande Coupure'){souhaite=dateHeure(v('coupureDate'),v('coupureHeure'))}
-  if(nat==='Demande Rebranchement'){souhaite=dateHeure(v('rebranchementDate'),v('rebranchementHeure'))}
+  if(nat==='Demande Coupure'){cil=v('coupureCil');souhaite=dateHeure(v('coupureDate'),v('coupureHeure'))}
+  if(nat==='Demande Rebranchement'){cil=v('rebranchementCil');souhaite=dateHeure(v('rebranchementDate'),v('rebranchementHeure'))}
   if(nat==='DFO'){detail=f.elements.dfo.value;if(!detail)return msg('Indiquez à quel niveau se trouve le DFO.','err')}
   if(nat==="Manque d'eau"){depuis=dateHeure(v('manqueDate'),v('manqueHeure'))}
   if(nat==='Appel Client pour Information'){detail=checked('appel');if(!detail)return msg('Cochez la raison de l’appel.','err')}
   if(nat==='Réfection'){detail=f.elements.refection.value;if(!detail)return msg('Indiquez le type de réfection.','err')}
   if(nat==="Qualité d'eau"){detail=[...f.querySelectorAll('input[name=qualite]:checked')].map(x=>x.value).join(', ');if(!detail)return msg('Cochez la nature du défaut qualité.','err');depuis=v('qualiteDepuis');periode=v('qualitePeriode')}
   if(nat==='Problème de Pression'){detail=f.elements.pression.value;if(!detail)return msg('Indiquez la nature du défaut de pression.','err');depuis=v('pressionDepuis');periode=v('pressionPeriode')}
-  const payload={clientId:(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random()),saisieLe:new Date().toISOString(),
-    reception:v('recDate')+(v('recHeure')?'T'+v('recHeure'):''),agent:v('agent'),matricule:v('matricule'),typeClient:v('typeClient'),nom:v('nom'),tel:v('tel'),email:v('email'),adresse:v('adresse'),quartier:v('quartier'),ville:v('ville'),
+  const code=codeSuivi();
+  const payload={code,clientId:(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random()),saisieLe:new Date().toISOString(),
+    reception:v('recDate')+(v('recHeure')?'T'+v('recHeure'):''),agent:v('agent'),matricule:v('matricule'),nom:v('nom'),tel:v('tel'),email:v('email'),adresse:v('adresse'),quartier:v('quartier'),ville:v('ville'),
     lat:pos?pos.lat:'',lng:pos?pos.lng:'',precision:pos?Math.round(pos.acc):'',
     nature:v('nature'),localisation:fuite?f.elements.loc.value:'',importance:fuite?(f.elements.imp.value||''):'',detail,depuis,periode,cil,souhaite,obs:v('obs'),photo:photoData,vignette:thumbData};
-  const b=$('btnSave');b.disabled=true;msg('Envoi en cours…','info');
+  const b=$('btnSave');b.disabled=true;msg('Envoi en cours…','info');$('codeBox').hidden=true;
   try{
     const j=await send(payload);
-    f.reset();setTimeout(()=>msg('Réclamation envoyée au responsable.','ok'),10);
+    f.reset();setTimeout(()=>{msg('Réclamation envoyée au responsable.','ok');showCode(code)},10);
   }catch(err){
     if(err.refused){msg('Réclamation refusée : '+err.message,'err')}
     else{const q=queue();q.push(payload);setQueue(q);f.reset();
+      setTimeout(()=>showCode(code),10);
       setTimeout(()=>msg(navigator.onLine?"Envoi impossible pour le moment : la réclamation est gardée sur ce téléphone et sera renvoyée automatiquement à la prochaine ouverture du formulaire."+(lastErr?' Détail technique : '+lastErr:''):"Pas de réseau : la réclamation est gardée sur ce téléphone et partira automatiquement dès que le réseau revient.",'info'),10)}
   }finally{b.disabled=false}
 });
 flush();
+
+/* Code de suivi : relie la réclamation à son traitement (ex. RU-K7P4Q) */
+function codeSuivi(){
+  const a='23456789ABCDEFGHJKMNPQRSTUVWXYZ',r=new Uint32Array(5);
+  (window.crypto||window.msCrypto).getRandomValues(r);
+  return 'RU-'+[...r].map(x=>a[x%a.length]).join('');
+}
+function showCode(c){$('codeVal').textContent=c;$('btnCopy').textContent='Copier';$('codeBox').hidden=false}
+$('btnCopy').addEventListener('click',()=>{
+  const c=$('codeVal').textContent;
+  const sel=()=>{const r=document.createRange();r.selectNodeContents($('codeVal'));const s=getSelection();s.removeAllRanges();s.addRange(r)};
+  try{navigator.clipboard.writeText(c).then(()=>{$('btnCopy').textContent='Copié'},sel)}catch(e){sel()}
+});
 </script>
 </body>
 </html>

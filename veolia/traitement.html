@@ -71,6 +71,7 @@ button:disabled{opacity:.55;cursor:wait}
 .checks label{display:flex;align-items:center;gap:8px;font-weight:400;font-size:14px}
 .checks input{width:auto;margin:0}
 .privacy{font-size:12px;color:var(--muted);text-align:center;margin:0}
+.home{font-size:13px;color:var(--accent);text-decoration:none;font-weight:600}
 .fixed{padding:9px 10px;border:1px dashed var(--line);border-radius:4px;color:var(--muted);font-size:15px;margin-top:4px}
 .thumbs{display:flex;gap:8px;flex-wrap:wrap}
 .thumbs img{width:84px;height:64px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
@@ -79,6 +80,7 @@ button:disabled{opacity:.55;cursor:wait}
 <body>
 <div class="wrap">
   <header>
+    <a class="home" href="__URL__" target="_top">← Accueil</a>
     <h1>Traitement <span>Ré-Use</span></h1>
     <p class="sub">À remplir par l'agent terrain après l'intervention</p>
   </header>
@@ -91,8 +93,9 @@ button:disabled{opacity:.55;cursor:wait}
     <form id="form" novalidate>
       <fieldset>
         <legend>Réclamation</legend>
+        <label for="code">Code de suivi <span class="req">*</span><input id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ex. RU-K7P4Q (donné à la saisie)"></label>
         <div class="row">
-          <label for="numReclamation">N° Réclamation <span class="req">*</span><input id="numReclamation" autocomplete="off" placeholder="N° WebSIGID ou N° Saisie"></label>
+          <label for="numReclamation">N° Réclamation<input id="numReclamation" autocomplete="off" placeholder="N° WebSIGID"></label>
           <label for="dateReception">Date réception<input id="dateReception" type="date"></label>
         </div>
         <label for="etat">Etat de la réclamation <span class="req">*</span>
@@ -170,7 +173,7 @@ button:disabled{opacity:.55;cursor:wait}
     </form>
   </section>
   <p class="privacy">Le traitement est transmis directement au responsable, avec votre compte Veolia.</p>
-  <p class="privacy">Traitement — Version Veolia 5</p>
+  <p class="privacy">Traitement — Version Veolia 6</p>
 </div>
 
 <script>
@@ -206,9 +209,11 @@ $('form').addEventListener('submit',async e=>{
   const v=id=>($(id).value||'').trim();
   const miss=[];
   if(!v('agent'))miss.push('nom de l’agent');if(!v('matricule'))miss.push('matricule');
-  if(!v('numReclamation'))miss.push('N° réclamation');if(!v('etat'))miss.push('état de la réclamation');if(!v('nature'))miss.push('nature réclamation');
+  if(!v('code'))miss.push('code de suivi');if(!v('etat'))miss.push('état de la réclamation');if(!v('nature'))miss.push('nature réclamation');
   if(miss.length)return msg('Champ obligatoire manquant : '+miss.join(', ')+'.','err');
-  const payload={agent:v('agent'),matricule:v('matricule'),numReclamation:v('numReclamation'),dateReception:v('dateReception'),
+  let code=v('code').toUpperCase().replace(/\s+/g,'');if(code&&!code.startsWith('RU-'))code='RU-'+code.replace(/^RU/,'');
+  if(!/^RU-[2-9A-Z]{5}$/.test(code))return msg('Le code de suivi doit ressembler à RU-K7P4Q.','err');
+  const payload={code,agent:v('agent'),matricule:v('matricule'),numReclamation:v('numReclamation'),dateReception:v('dateReception'),
     etat:v('etat'),nature:v('nature'),objet:v('objet'),typeClient:v('typeClient'),nomClient:v('nomClient'),cil:v('cil'),
     prefecture:v('prefecture'),commune:v('commune'),quartier:v('quartier'),sousQuartier:v('sousQuartier'),rue:v('rue'),adresse:v('adresse'),
     telPortable:v('telPortable'),telFixe:v('telFixe'),rappels:v('rappels'),photos};
@@ -216,7 +221,7 @@ $('form').addEventListener('submit',async e=>{
   try{
     const j=await send(payload);
     $('form').reset();
-    setTimeout(()=>msg(j.nouvelle?'Traitement enregistré. Ce N° de réclamation n’existait pas encore : une nouvelle ligne a été créée pour le responsable.':'Traitement enregistré.','ok'),10);
+    setTimeout(()=>msg('Traitement enregistré pour la réclamation '+code+'.','ok'),10);
   }catch(err){
     msg(err.refused?'Traitement refusé : '+err.message:'Envoi impossible pour le moment. Vérifiez le réseau puis appuyez de nouveau sur « Enregistrer le traitement ».','err');
   }finally{b.disabled=false}

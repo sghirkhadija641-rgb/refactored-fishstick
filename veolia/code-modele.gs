@@ -1,11 +1,10 @@
 /**
  * Réclamations Ré-Use — version compte Veolia.
- * Deux formulaires servis par ce script, réservés aux comptes Veolia connectés :
- *  - Saisie (lien de l'application Web) : un agent enregistre une nouvelle réclamation.
- *  - Traitement (même lien suivi de ?f=traitement) : après l'intervention, l'agent terrain
- *    remplit les champs de traitement (écran WebSIGID). Ils sont écrits dans les colonnes
- *    « Traitement - … » de la ligne de la réclamation, retrouvée par son N° de réclamation
- *    ou son N° Saisie.
+ * Un seul lien (l'application Web), réservé aux comptes Veolia connectés :
+ *  - page d'accueil : l'agent choisit « Saisie d'une réclamation » ou « Traitement » ;
+ *  - Saisie (?f=saisie) : enregistre une nouvelle réclamation et donne à l'agent un code de suivi (ex. RU-K7P4Q) ;
+ *  - Traitement (?f=traitement) : après l'intervention, l'agent terrain saisit le code de suivi et les
+ *    champs de traitement (écran WebSIGID), écrits dans les colonnes « Traitement - … » de la même ligne.
  * Les agents ne voient jamais les réclamations enregistrées.
  *
  * Installation : Extensions > Apps Script, coller ce code, enregistrer,
@@ -13,7 +12,8 @@
  * (Exécuter en tant que : Moi ; Qui a accès : Anyone within Veolia).
  */
 
-const VERSION = 'Veolia 5';
+const VERSION = 'Veolia 6';
+const CODE_RE = /^RU-[2-9A-Z]{5}$/;
 const SHEET_NAME = 'Réclamations';
 const FOLDER_NAME = 'Photos réclamations Ré-Use';
 const DATE_FMT = 'dd/MM/yyyy HH:mm';
@@ -23,13 +23,13 @@ const TRAITEMENT_HEADERS = ['Date réception', 'Métier', 'Nature réclamation',
   'Nom du client', 'CIL', 'Préfecture', 'Commune', 'Quartier', 'Sous-quartier', 'Rue', 'Adresse de la réclamation',
   'Téléphone portable 1', 'Téléphone fixe', 'Nombre de rappels', 'Nombre de photos', 'Photos',
   'Utilisateur saisie', "Date d'envoi"].map(h => T + h);
-const HEADERS = ['N° Saisie', 'N° de réclamation', 'Date de réception', "Date d'envoi", 'Agent', 'Matricule',
-  'Type client', 'Nom du réclamant', 'CIL', 'Téléphone', 'E-mail',
+const HEADERS = ['N° Saisie', 'N° de réclamation', 'Code de suivi', 'Date de réception', "Date d'envoi", 'Agent', 'Matricule',
+  'Nom du réclamant', 'Téléphone', 'E-mail',
   'Adresse', 'Quartier', 'Commune', 'Latitude', 'Longitude', 'Précision (m)', 'Carte',
-  'Nature', 'Localisation fuite', 'Importance fuite', 'Détail nature', 'Depuis', 'Période', 'Date/heure souhaitée',
+  'Nature', 'Localisation fuite', 'Importance fuite', 'Détail nature', 'Depuis', 'Période', 'CIL', 'Date/heure souhaitée',
   'Observations', 'Aperçu photo', 'Lien photo', 'Etat de la réclamation']
   .concat(TRAITEMENT_HEADERS, ['ID envoi']);
-const TEXT_COLS = ['N° de réclamation', 'Matricule', 'CIL', 'Téléphone', 'E-mail', T + 'CIL', T + 'Téléphone portable 1', T + 'Téléphone fixe'];
+const TEXT_COLS = ['N° de réclamation', 'Code de suivi', 'Matricule', 'CIL', 'Téléphone', 'E-mail', T + 'CIL', T + 'Téléphone portable 1', T + 'Téléphone fixe'];
 const DATE_COLS = ['Date de réception', "Date d'envoi", T + 'Date réception', T + "Date d'envoi"];
 const HIDDEN_COLS = ['ID envoi'];
 
@@ -46,9 +46,11 @@ function doGet(e) {
     try { note = ' Lignes réparées : ' + reparerAnciennesLignes() + '.'; } catch (err) { note = ' Réparation impossible : ' + err.message; }
     return ContentService.createTextOutput('Le script des réclamations Ré-Use fonctionne. (version ' + VERSION + ')' + note);
   }
-  const traitement = e && e.parameter && e.parameter.f === 'traitement';
-  return HtmlService.createHtmlOutput(traitement ? TRAITEMENT_HTML : FORM_HTML)
-    .setTitle(traitement ? 'Traitement Ré-Use' : 'Réclamations Ré-Use')
+  const f = e && e.parameter ? e.parameter.f : '';
+  const url = ScriptApp.getService().getUrl();
+  const page = f === 'saisie' ? FORM_HTML : f === 'traitement' ? TRAITEMENT_HTML : ACCUEIL_HTML;
+  return HtmlService.createHtmlOutput(page.split('__URL__').join(url))
+    .setTitle(f === 'traitement' ? 'Traitement Ré-Use' : 'Réclamations Ré-Use')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1');
 }
 
@@ -79,12 +81,12 @@ function envoyer(d) {
     }
 
     const numero = 'RU-' + new Date().getFullYear() + '-' + String(sh.getLastRow()).padStart(5, '0');
+    const code = CODE_RE.test(String(d.code || '')) ? String(d.code) : nouveauCode();
     const hasPos = d.lat !== '' && d.lat != null && d.lng !== '' && d.lng != null && isFinite(d.lat) && isFinite(d.lng);
 
     const values = {
-      'N° Saisie': numero, 'Date de réception': reception, "Date d'envoi": new Date(),
+      'N° Saisie': numero, 'Code de suivi': code, 'Date de réception': reception, "Date d'envoi": new Date(),
       'Agent': safe(d.agent), 'Matricule': safe(d.matricule),
-      'Type client': TYPES_CLIENT.indexOf(d.typeClient) >= 0 ? d.typeClient : '',
       'Nom du réclamant': safe(d.nom), 'CIL': safe(d.cil), 'Téléphone': safe(d.tel), 'E-mail': safe(d.email),
       'Adresse': safe(d.adresse), 'Quartier': safe(d.quartier), 'Commune': safe(d.ville),
       'Latitude': hasPos ? Number(d.lat) : '', 'Longitude': hasPos ? Number(d.lng) : '',
@@ -119,7 +121,7 @@ function envoyer(d) {
         sh.getRange(row, c['Aperçu photo']).setValue('aperçu indisponible');
       }
     }
-    return { ok: true, numero: numero };
+    return { ok: true, numero: numero, code: code };
   } catch (err) {
     return { ok: false, error: 'erreur du tableau : ' + err.message };
   } finally {
@@ -135,26 +137,18 @@ function enregistrerTraitement(t) {
   try {
     lock.waitLock(25000);
     t = t || {};
-    for (const k of ['agent', 'matricule', 'numReclamation', 'etat', 'nature']) {
+    for (const k of ['code', 'agent', 'matricule', 'etat', 'nature']) {
       if (!t[k] || !String(t[k]).trim()) return { ok: false, error: 'champ manquant (' + k + ')' };
     }
     if (ETATS.indexOf(t.etat) < 0) return { ok: false, error: 'état de la réclamation invalide' };
     if (NATURES.indexOf(t.nature) < 0) return { ok: false, error: 'nature inconnue' };
-    const num = String(t.numReclamation).trim();
+    const code = String(t.code).trim().toUpperCase();
+    if (!CODE_RE.test(code)) return { ok: false, error: 'code de suivi invalide (exemple : RU-K7P4Q)' };
     const sh = getSheet(), c = cols(sh);
-
-    // Ligne de la réclamation : par N° de réclamation, sinon par N° Saisie ; sinon nouvelle ligne.
-    let row = trouverLigne(sh, c, num, 'N° de réclamation') || trouverLigne(sh, c, num, 'N° Saisie');
-    const nouvelle = !row;
-    if (nouvelle) {
-      const line = new Array(sh.getLastColumn()).fill('');
-      line[c['N° de réclamation'] - 1] = safe(num);
-      sh.appendRow(line);
-      row = sh.getLastRow();
-    } else if (c['N° de réclamation'] && !sh.getRange(row, c['N° de réclamation']).getValue() &&
-               String(sh.getRange(row, c['N° Saisie']).getValue()) !== num) {
-      sh.getRange(row, c['N° de réclamation']).setValue(safe(num));
-    }
+    const row = trouverLigne(sh, c, code, 'Code de suivi');
+    if (!row) return { ok: false, error: 'code de suivi inconnu. Vérifiez le code donné lors de la saisie de la réclamation.' };
+    const num = String(t.numReclamation || '').trim();
+    if (num && c['N° de réclamation']) sh.getRange(row, c['N° de réclamation']).setValue(safe(num));
 
     const compte = Session.getActiveUser().getEmail();
     const photos = (Array.isArray(t.photos) ? t.photos : []).slice(0, 5).map(jpeg).filter(b => b && b.length < 8 * 1024 * 1024);
@@ -173,7 +167,7 @@ function enregistrerTraitement(t) {
 
     // Photos : rangées dans Google Drive, un lien par photo dans la même case.
     if (photos.length && c[T + 'Photos']) {
-      const urls = photos.map((b, i) => getFolder().createFile(Utilities.newBlob(b, 'image/jpeg', num + '-traitement-' + (i + 1) + '.jpg')).getUrl());
+      const urls = photos.map((b, i) => getFolder().createFile(Utilities.newBlob(b, 'image/jpeg', code + '-traitement-' + (i + 1) + '.jpg')).getUrl());
       const labels = urls.map((u, i) => 'Photo ' + (i + 1));
       const text = labels.join('  ');
       const rt = SpreadsheetApp.newRichTextValue().setText(text);
@@ -181,11 +175,22 @@ function enregistrerTraitement(t) {
       labels.forEach((l, i) => { rt.setLinkUrl(pos, pos + l.length, urls[i]); pos += l.length + 2; });
       sh.getRange(row, c[T + 'Photos']).setRichTextValue(rt.build());
     }
-    return { ok: true, nouvelle: nouvelle };
+    return { ok: true };
   } catch (err) {
     return { ok: false, error: 'erreur du tableau : ' + err.message };
   } finally {
     try { lock.releaseLock(); } catch (e) {}
+  }
+}
+
+// Code de suivi aléatoire, unique dans le tableau.
+function nouveauCode() {
+  const a = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+  const sh = getSheet(), c = cols(sh);
+  for (;;) {
+    let s = 'RU-';
+    for (let i = 0; i < 5; i++) s += a[Math.floor(Math.random() * a.length)];
+    if (!trouverLigne(sh, c, s, 'Code de suivi')) return s;
   }
 }
 
