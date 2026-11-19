@@ -11,7 +11,7 @@
 
 const SHEET_NAME = 'Réclamations';
 const FOLDER_NAME = 'Photos réclamations Ré-Use';
-const HEADERS = ['N° Saisie', 'Date de réception', 'Agent', 'Matricule', 'Nom du réclamant', 'Téléphone', 'E-mail',
+const HEADERS = ['N° Saisie', 'N° de réclamation', 'Date de réception', 'Agent', 'Matricule', 'Nom du réclamant', 'Téléphone', 'E-mail',
   'Adresse', 'Quartier', 'Commune', 'Latitude', 'Longitude', 'Précision (m)', 'Carte',
   'Nature', 'Localisation fuite', 'Importance fuite', 'Détail nature', 'Depuis', 'Période', 'CIL', 'Date/heure souhaitée',
   'Observations', 'Aperçu photo', 'Lien photo', 'Statut', 'ID envoi'];
@@ -114,7 +114,8 @@ function getSheet() {
     sh.appendRow(HEADERS);
     styleHeader(sh.getRange(1, 1, 1, HEADERS.length));
     sh.setFrozenRows(1);
-    sh.getRange('B:B').setNumberFormat('dd/MM/yyyy HH:mm');
+    sh.getRange(2, HEADERS.indexOf('Date de réception') + 1, sh.getMaxRows() - 1, 1).setNumberFormat('dd/MM/yyyy HH:mm');
+    sh.getRange(2, HEADERS.indexOf('N° de réclamation') + 1, sh.getMaxRows() - 1, 1).setNumberFormat('@');
     sh.getRange(2, COL.tel, sh.getMaxRows() - 1, 2).setNumberFormat('@');
     sh.getRange(2, COL.matricule, sh.getMaxRows() - 1, 1).setNumberFormat('@');
     sh.getRange(2, HEADERS.indexOf('CIL') + 1, sh.getMaxRows() - 1, 1).setNumberFormat('@');
@@ -148,6 +149,7 @@ function mettreAJourColonnes(sh) {
     if (head.indexOf(h) >= 0) return;
     sh.insertColumnBefore(i + 1);
     sh.getRange(1, i + 1).setValue(h);
+    if (h === 'N° de réclamation') sh.getRange(1, i + 1, sh.getMaxRows(), 1).setBackground(null).setNumberFormat('@');
     styleHeader(sh.getRange(1, i + 1));
     sh.showColumns(i + 1);
     head.splice(i, 0, h);
