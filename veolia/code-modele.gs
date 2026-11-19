@@ -12,7 +12,7 @@
  * (Exécuter en tant que : Moi ; Qui a accès : Anyone within Veolia).
  */
 
-const VERSION = 'Veolia 6';
+const VERSION = 'Veolia 7';
 const CODE_RE = /^RU-[2-9A-Z]{5}$/;
 const SHEET_NAME = 'Réclamations';
 const FOLDER_NAME = 'Photos réclamations Ré-Use';
@@ -137,23 +137,23 @@ function enregistrerTraitement(t) {
   try {
     lock.waitLock(25000);
     t = t || {};
-    for (const k of ['code', 'agent', 'matricule', 'etat', 'nature']) {
+    for (const k of ['code', 'agent', 'matricule', 'etat']) {
       if (!t[k] || !String(t[k]).trim()) return { ok: false, error: 'champ manquant (' + k + ')' };
     }
     if (ETATS.indexOf(t.etat) < 0) return { ok: false, error: 'état de la réclamation invalide' };
-    if (NATURES.indexOf(t.nature) < 0) return { ok: false, error: 'nature inconnue' };
     const code = String(t.code).trim().toUpperCase();
     if (!CODE_RE.test(code)) return { ok: false, error: 'code de suivi invalide (exemple : RU-K7P4Q)' };
     const sh = getSheet(), c = cols(sh);
     const row = trouverLigne(sh, c, code, 'Code de suivi');
     if (!row) return { ok: false, error: 'code de suivi inconnu. Vérifiez le code donné lors de la saisie de la réclamation.' };
+    const nature = String(sh.getRange(row, c['Nature']).getValue() || '');
     const num = String(t.numReclamation || '').trim();
     if (num && c['N° de réclamation']) sh.getRange(row, c['N° de réclamation']).setValue(safe(num));
 
     const compte = Session.getActiveUser().getEmail();
     const photos = (Array.isArray(t.photos) ? t.photos : []).slice(0, 5).map(jpeg).filter(b => b && b.length < 8 * 1024 * 1024);
     const values = {
-      'Date réception': parseDateTime(t.dateReception) || '', 'Métier': 'Ré-Use', 'Nature réclamation': t.nature,
+      'Date réception': parseDateTime(t.dateReception) || '', 'Métier': 'Ré-Use', 'Nature réclamation': nature,
       'Objet préliminaire': safe(t.objet), 'Type client': TYPES_CLIENT.indexOf(t.typeClient) >= 0 ? t.typeClient : '',
       'Nom du client': safe(t.nomClient), 'CIL': safe(t.cil), 'Préfecture': safe(t.prefecture), 'Commune': safe(t.commune),
       'Quartier': safe(t.quartier), 'Sous-quartier': safe(t.sousQuartier), 'Rue': safe(t.rue),
@@ -180,6 +180,19 @@ function enregistrerTraitement(t) {
     return { ok: false, error: 'erreur du tableau : ' + err.message };
   } finally {
     try { lock.releaseLock(); } catch (e) {}
+  }
+}
+
+// Formulaire de traitement : renvoie seulement la nature de la réclamation liée au code.
+function natureDuCode(code) {
+  try {
+    code = String(code || '').trim().toUpperCase();
+    if (!CODE_RE.test(code)) return { ok: false, error: 'code de suivi invalide (exemple : RU-K7P4Q)' };
+    const sh = getSheet(), c = cols(sh), row = trouverLigne(sh, c, code, 'Code de suivi');
+    if (!row) return { ok: false, error: 'Code de suivi inconnu : vérifiez le code donné lors de la saisie.' };
+    return { ok: true, nature: String(sh.getRange(row, c['Nature']).getValue() || '') };
+  } catch (err) {
+    return { ok: false, error: 'vérification impossible : ' + err.message };
   }
 }
 

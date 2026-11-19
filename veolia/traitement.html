@@ -72,6 +72,7 @@ button:disabled{opacity:.55;cursor:wait}
 .checks input{width:auto;margin:0}
 .privacy{font-size:12px;color:var(--muted);text-align:center;margin:0}
 .home{font-size:13px;color:var(--accent);text-decoration:none;font-weight:600}
+.fixed.ok{color:var(--fg);border-style:solid;border-color:var(--accent);background:var(--accent-soft);font-weight:600}
 .fixed{padding:9px 10px;border:1px dashed var(--line);border-radius:4px;color:var(--muted);font-size:15px;margin-top:4px}
 .thumbs{display:flex;gap:8px;flex-wrap:wrap}
 .thumbs img{width:84px;height:64px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
@@ -94,6 +95,7 @@ button:disabled{opacity:.55;cursor:wait}
       <fieldset>
         <legend>Réclamation</legend>
         <label for="code">Code de suivi <span class="req">*</span><input id="code" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ex. RU-K7P4Q (donné à la saisie)"></label>
+        <p class="det" id="codeNote">La nature de la réclamation s'affichera dès que le code est saisi.</p>
         <div class="row">
           <label for="numReclamation">N° Réclamation<input id="numReclamation" autocomplete="off" placeholder="N° WebSIGID"></label>
           <label for="dateReception">Date réception<input id="dateReception" type="date"></label>
@@ -109,14 +111,7 @@ button:disabled{opacity:.55;cursor:wait}
         </label>
         <div class="row">
           <div><label>Métier</label><div class="fixed">Ré-Use</div></div>
-          <label for="nature">Nature réclamation <span class="req">*</span>
-            <select id="nature">
-              <option value=""></option>
-              <option>Appel Client pour Information</option><option>Demande Coupure</option><option>Demande Rebranchement</option>
-              <option>DFO</option><option>Fuite d'eau</option><option>Manque d'eau</option><option>Problème de Pression</option>
-              <option>Qualité d'eau</option><option>Réfection</option>
-            </select>
-          </label>
+          <div><label>Nature réclamation</label><div class="fixed" id="natureVal">—</div></div>
         </div>
         <label for="objet">Objet préliminaire<input id="objet" autocomplete="off"></label>
       </fieldset>
@@ -173,7 +168,7 @@ button:disabled{opacity:.55;cursor:wait}
     </form>
   </section>
   <p class="privacy">Le traitement est transmis directement au responsable, avec votre compte Veolia.</p>
-  <p class="privacy">Traitement — Version Veolia 6</p>
+  <p class="privacy">Traitement — Version Veolia 7</p>
 </div>
 
 <script>
@@ -193,7 +188,27 @@ $('photos').addEventListener('change',async()=>{
   for(const f of files){try{photos.push(await shrink(f))}catch(e){msg("Une image n'a pas pu être lue.",'err')}}
   showPhotos();
 });
-$('form').addEventListener('reset',()=>setTimeout(()=>{photos=[];showPhotos()},0));
+$('form').addEventListener('reset',()=>setTimeout(()=>{photos=[];showPhotos();setNature('', '')},0));
+
+/* Code de suivi : dès qu'il est complet, la nature de la réclamation est reprise de la saisie */
+let natureCode='',codeVerifie='',lookupSeq=0;
+const normCode=s=>{let c=String(s||'').toUpperCase().replace(/\s+/g,'');if(c&&!c.startsWith('RU-'))c='RU-'+c.replace(/^RU/,'');return c};
+function setNature(nature,note,kind){
+  natureCode=nature;$('natureVal').textContent=nature||'—';$('natureVal').className='fixed'+(nature?' ok':'');
+  $('codeNote').textContent=note||"La nature de la réclamation s'affichera dès que le code est saisi.";$('codeNote').style.color=kind==='err'?'var(--bad)':'';
+}
+function verifierCode(){
+  const c=normCode($('code').value);codeVerifie='';
+  if(!/^RU-[2-9A-Z]{5}$/.test(c)){setNature('',c.length>3?'Code incomplet : il ressemble à RU-K7P4Q.':'');return}
+  const seq=++lookupSeq;setNature('','Recherche de la réclamation…');
+  google.script.run
+    .withSuccessHandler(r=>{if(seq!==lookupSeq)return;
+      if(r&&r.ok){codeVerifie=c;setNature(r.nature,'Réclamation trouvée.')}
+      else setNature('',(r&&r.error)||'Code de suivi inconnu.','err')})
+    .withFailureHandler(()=>{if(seq===lookupSeq)setNature('','Vérification impossible : vérifiez le réseau.','err')})
+    .natureDuCode(c);
+}
+$('code').addEventListener('input',verifierCode);
 
 function send(payload){
   return new Promise((res,rej)=>{
@@ -209,12 +224,13 @@ $('form').addEventListener('submit',async e=>{
   const v=id=>($(id).value||'').trim();
   const miss=[];
   if(!v('agent'))miss.push('nom de l’agent');if(!v('matricule'))miss.push('matricule');
-  if(!v('code'))miss.push('code de suivi');if(!v('etat'))miss.push('état de la réclamation');if(!v('nature'))miss.push('nature réclamation');
+  if(!v('code'))miss.push('code de suivi');if(!v('etat'))miss.push('état de la réclamation');
   if(miss.length)return msg('Champ obligatoire manquant : '+miss.join(', ')+'.','err');
   let code=v('code').toUpperCase().replace(/\s+/g,'');if(code&&!code.startsWith('RU-'))code='RU-'+code.replace(/^RU/,'');
   if(!/^RU-[2-9A-Z]{5}$/.test(code))return msg('Le code de suivi doit ressembler à RU-K7P4Q.','err');
+  if(code!==codeVerifie||!natureCode)return msg('Code de suivi inconnu : vérifiez le code donné lors de la saisie.','err');
   const payload={code,agent:v('agent'),matricule:v('matricule'),numReclamation:v('numReclamation'),dateReception:v('dateReception'),
-    etat:v('etat'),nature:v('nature'),objet:v('objet'),typeClient:v('typeClient'),nomClient:v('nomClient'),cil:v('cil'),
+    etat:v('etat'),nature:natureCode,objet:v('objet'),typeClient:v('typeClient'),nomClient:v('nomClient'),cil:v('cil'),
     prefecture:v('prefecture'),commune:v('commune'),quartier:v('quartier'),sousQuartier:v('sousQuartier'),rue:v('rue'),adresse:v('adresse'),
     telPortable:v('telPortable'),telFixe:v('telFixe'),rappels:v('rappels'),photos};
   const b=$('btnSave');b.disabled=true;msg('Envoi en cours…','info');
