@@ -11,10 +11,14 @@
 
 const SHEET_NAME = 'Réclamations';
 const FOLDER_NAME = 'Photos réclamations Ré-Use';
-const HEADERS = ['N° réclamation', 'Date de réception', 'Agent', 'Nom du réclamant', 'Téléphone', 'E-mail',
+const HEADERS = ['N° réclamation', 'Date de réception', 'Agent', 'Matricule', 'Nom du réclamant', 'Téléphone', 'E-mail',
   'Adresse', 'Quartier', 'Commune', 'Latitude', 'Longitude', 'Précision (m)', 'Carte',
-  'Nature', 'Localisation fuite', 'Importance fuite', 'Observations', 'Aperçu photo', 'Lien photo', 'Statut', 'ID envoi'];
-const COL = { carte: 13, apercu: 18, lienPhoto: 19, statut: 20 };
+  'Nature', 'Localisation fuite', 'Importance fuite', 'Détail nature', 'Depuis', 'Période', 'CIL', 'Date/heure souhaitée',
+  'Observations', 'Aperçu photo', 'Lien photo', 'Statut', 'ID envoi'];
+const COL = {
+  carte: HEADERS.indexOf('Carte') + 1, tel: HEADERS.indexOf('Téléphone') + 1, matricule: HEADERS.indexOf('Matricule') + 1,
+  apercu: HEADERS.indexOf('Aperçu photo') + 1, lienPhoto: HEADERS.indexOf('Lien photo') + 1, statut: HEADERS.indexOf('Statut') + 1
+};
 const NATURES = ['Réfection', "Fuite d'eau", "Qualité d'eau", 'Problème de Pression', 'Demande Coupure',
   'Demande Rebranchement', 'DFO', "Manque d'eau", 'Appel Client pour Information'];
 
@@ -22,7 +26,7 @@ function doGet(e) {
   if (e && e.parameter && e.parameter.reparer) {
     let note = '';
     try { note = ' Lignes réparées : ' + reparerAnciennesLignes() + '.'; } catch (err) { note = ' Réparation impossible : ' + err.message; }
-    return ContentService.createTextOutput('Le script des réclamations Ré-Use fonctionne. (version Veolia 1)' + note);
+    return ContentService.createTextOutput('Le script des réclamations Ré-Use fonctionne. (version Veolia 2)' + note);
   }
   return HtmlService.createHtmlOutput(FORM_HTML)
     .setTitle('Réclamations Ré-Use')
@@ -36,7 +40,7 @@ function envoyer(d) {
     lock.waitLock(25000);
     const compte = Session.getActiveUser().getEmail();
     d.agent = [String(d.agent || '').trim(), compte ? '(' + compte + ')' : ''].filter(String).join(' ');
-    for (const k of ['nom', 'tel', 'adresse', 'nature']) {
+    for (const k of ['matricule', 'nom', 'adresse', 'nature']) {
       if (!d[k] || !String(d[k]).trim()) return ({ ok: false, error: 'champ manquant (' + k + ')' });
     }
     if (NATURES.indexOf(d.nature) < 0) return ({ ok: false, error: 'nature inconnue' });
@@ -55,12 +59,18 @@ function envoyer(d) {
 
     const hasPos = d.lat !== '' && d.lat != null && d.lng !== '' && d.lng != null && isFinite(d.lat) && isFinite(d.lng);
 
-    sh.appendRow([
-      numero, new Date(), safe(d.agent), safe(d.nom), safe(d.tel), safe(d.email),
-      safe(d.adresse), safe(d.quartier), safe(d.ville),
-      hasPos ? Number(d.lat) : '', hasPos ? Number(d.lng) : '', hasPos && isFinite(d.precision) ? Number(d.precision) : '', '',
-      d.nature, safe(d.localisation), safe(d.importance), safe(d.obs), '', '', 'Ouverte', safe(d.clientId)
-    ]);
+    const values = {
+      'N° réclamation': numero, 'Date de réception': new Date(), 'Agent': safe(d.agent), 'Matricule': safe(d.matricule),
+      'Nom du réclamant': safe(d.nom), 'Téléphone': safe(d.tel), 'E-mail': safe(d.email),
+      'Adresse': safe(d.adresse), 'Quartier': safe(d.quartier), 'Commune': safe(d.ville),
+      'Latitude': hasPos ? Number(d.lat) : '', 'Longitude': hasPos ? Number(d.lng) : '',
+      'Précision (m)': hasPos && isFinite(d.precision) ? Number(d.precision) : '',
+      'Nature': d.nature, 'Localisation fuite': safe(d.localisation), 'Importance fuite': safe(d.importance),
+      'Détail nature': safe(d.detail), 'Depuis': safe(d.depuis), 'Période': safe(d.periode),
+      'CIL': safe(d.cil), 'Date/heure souhaitée': safe(d.souhaite),
+      'Observations': safe(d.obs), 'Statut': 'Ouverte', 'ID envoi': safe(d.clientId)
+    };
+    sh.appendRow(HEADERS.map(h => h in values ? values[h] : ''));
     const row = sh.getLastRow();
 
     // Lien carte : vrai lien cliquable, conservé dans le fichier Excel téléchargé.
@@ -102,22 +112,45 @@ function getSheet() {
   if (!sh) sh = ss.insertSheet(SHEET_NAME);
   if (sh.getLastRow() === 0) {
     sh.appendRow(HEADERS);
-    sh.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold').setBackground('#0f6e86').setFontColor('#ffffff');
+    styleHeader(sh.getRange(1, 1, 1, HEADERS.length));
     sh.setFrozenRows(1);
     sh.getRange('B:B').setNumberFormat('dd/MM/yyyy HH:mm');
-    sh.getRange('E:E').setNumberFormat('@');
+    sh.getRange(2, COL.tel, sh.getMaxRows() - 1, 2).setNumberFormat('@');
+    sh.getRange(2, COL.matricule, sh.getMaxRows() - 1, 1).setNumberFormat('@');
+    sh.getRange(2, HEADERS.indexOf('CIL') + 1, sh.getMaxRows() - 1, 1).setNumberFormat('@');
     sh.getRange(2, COL.statut, sh.getMaxRows() - 1, 1).setDataValidation(SpreadsheetApp.newDataValidation()
       .requireValueInList(['Ouverte', 'En cours', 'Clôturée'], true).build());
     sh.setColumnWidth(COL.apercu, 160);
     sh.hideColumns(HEADERS.length);
-  } else if (sh.getRange(1, COL.apercu).getValue() === 'Photo') {
-    // Tableau créé avec l'ancienne version : on ajoute la colonne « Aperçu photo ».
-    sh.insertColumnBefore(COL.apercu);
-    sh.getRange(1, COL.apercu, 1, 2).setValues([['Aperçu photo', 'Lien photo']])
-      .setFontWeight('bold').setBackground('#0f6e86').setFontColor('#ffffff');
-    sh.setColumnWidth(COL.apercu, 160);
+  } else {
+    mettreAJourColonnes(sh);
   }
   return sh;
+}
+
+// Tableau créé avec une version précédente : ajoute les colonnes manquantes à leur place.
+function mettreAJourColonnes(sh) {
+  let head = sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0].map(String);
+  const oldPhoto = head.indexOf('Photo');
+  if (oldPhoto >= 0 && head.indexOf('Aperçu photo') < 0) {
+    sh.insertColumnBefore(oldPhoto + 1);
+    sh.getRange(1, oldPhoto + 1, 1, 2).setValues([['Aperçu photo', 'Lien photo']]);
+    styleHeader(sh.getRange(1, oldPhoto + 1, 1, 2));
+    sh.setColumnWidth(oldPhoto + 1, 160);
+    head.splice(oldPhoto, 1, 'Aperçu photo', 'Lien photo');
+  }
+  HEADERS.forEach((h, i) => {
+    if (head.indexOf(h) >= 0) return;
+    sh.insertColumnBefore(i + 1);
+    sh.getRange(1, i + 1).setValue(h);
+    styleHeader(sh.getRange(1, i + 1));
+    sh.showColumns(i + 1);
+    head.splice(i, 0, h);
+  });
+}
+
+function styleHeader(range) {
+  return range.setFontWeight('bold').setBackground('#0f6e86').setFontColor('#ffffff');
 }
 
 /**

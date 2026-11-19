@@ -63,6 +63,12 @@ button:disabled{opacity:.55;cursor:wait}
 .agent{display:flex;gap:8px;align-items:center;padding:10px 14px;background:var(--accent-soft);border-bottom:1px solid var(--line);font-size:13px}
 .agent label{white-space:nowrap}
 .agent input{padding:6px 8px;font-size:15px;margin:0}
+.agent-id{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+.agent-id label{white-space:normal}
+.agent-id input{margin-top:4px;background:var(--surface)}
+.checks{display:flex;flex-direction:column;gap:8px}
+.checks label{display:flex;align-items:center;gap:8px;font-weight:400;font-size:14px}
+.checks input{width:auto;margin:0}
 .privacy{font-size:12px;color:var(--muted);text-align:center;margin:0}
 </style>
 </head>
@@ -74,13 +80,16 @@ button:disabled{opacity:.55;cursor:wait}
   </header>
 
   <section class="panel">
-    <div class="agent"><label for="agent">Agent</label><input id="agent" placeholder="Votre nom (mémorisé)"></div>
+    <div class="agent agent-id">
+      <label for="agent">Agent <span class="req">*</span><input id="agent" autocomplete="off" placeholder="Votre nom"></label>
+      <label for="matricule">Matricule <span class="req">*</span><input id="matricule" autocomplete="off" inputmode="text" placeholder="Votre matricule"></label>
+    </div>
     <form id="form" novalidate>
       <fieldset>
         <legend>Réclamant</legend>
         <label for="nom">Nom et prénom <span class="req">*</span><input id="nom" autocomplete="off" required></label>
         <div class="row">
-          <label for="tel">Téléphone <span class="req">*</span><input id="tel" type="tel" inputmode="tel" autocomplete="off" placeholder="06 12 34 56 78" required></label>
+          <label for="tel">Téléphone<input id="tel" type="tel" inputmode="tel" autocomplete="off" placeholder="facultatif"></label>
           <label for="email">E-mail<input id="email" type="email" autocomplete="off" placeholder="facultatif"></label>
         </div>
       </fieldset>
@@ -141,6 +150,76 @@ button:disabled{opacity:.55;cursor:wait}
             </div>
           </div>
         </div>
+        <div class="fuite" id="refectionBox" hidden>
+          <div class="lg">Réfection <span class="req">*</span></div>
+          <div class="radios">
+            <label><input type="radio" name="refection" value="Non réalisée"> Non réalisée</label>
+            <label><input type="radio" name="refection" value="A reprendre"> A reprendre</label>
+            <label><input type="radio" name="refection" value="Chantier non Nettoyé"> Chantier non Nettoyé</label>
+          </div>
+        </div>
+        <div class="fuite" id="qualiteBox" hidden>
+          <div class="lg">Nature défaut qualité <span class="req">*</span></div>
+          <div class="checks">
+            <label><input type="checkbox" name="qualite" value="Couleur / Turbidité"> Couleur / Turbidité</label>
+            <label><input type="checkbox" name="qualite" value="Goût / Odeur"> Goût / Odeur</label>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <label for="qualiteDepuis">Défaut qualité depuis<input id="qualiteDepuis" autocomplete="off" placeholder="ex. 3 jours, le 15/11"></label>
+            <label for="qualitePeriode">Période défaut qualité<input id="qualitePeriode" autocomplete="off" placeholder="ex. le matin, en continu"></label>
+          </div>
+        </div>
+        <div class="fuite" id="pressionBox" hidden>
+          <div class="lg">Nature défaut pression <span class="req">*</span></div>
+          <div class="radios">
+            <label><input type="radio" name="pression" value="Manque de pression"> Manque de pression</label>
+            <label><input type="radio" name="pression" value="Excès de pression"> Excès de pression</label>
+            <label><input type="radio" name="pression" value="Pas d'Eau"> Pas d'Eau</label>
+          </div>
+          <div class="row" style="margin-top:10px">
+            <label for="pressionDepuis">Problème de pression depuis<input id="pressionDepuis" autocomplete="off" placeholder="ex. 3 jours, le 15/11"></label>
+            <label for="pressionPeriode">Période problème pression<input id="pressionPeriode" autocomplete="off" placeholder="ex. le soir, la nuit"></label>
+          </div>
+        </div>
+        <div class="fuite" id="coupureBox" hidden>
+          <div class="lg">Demande de coupure</div>
+          <label for="coupureCil">CIL<input id="coupureCil" autocomplete="off" inputmode="numeric" placeholder="N° CIL du client"></label>
+          <div class="row" style="margin-top:10px">
+            <label for="coupureDate">Date souhaitée<input id="coupureDate" type="date"></label>
+            <label for="coupureHeure">Heure souhaitée<input id="coupureHeure" type="time"></label>
+          </div>
+        </div>
+        <div class="fuite" id="rebranchementBox" hidden>
+          <div class="lg">Demande de rebranchement</div>
+          <label for="rebranchementCil">CIL<input id="rebranchementCil" autocomplete="off" inputmode="numeric" placeholder="N° CIL du client"></label>
+          <div class="row" style="margin-top:10px">
+            <label for="rebranchementDate">Date souhaitée<input id="rebranchementDate" type="date"></label>
+            <label for="rebranchementHeure">Heure souhaitée<input id="rebranchementHeure" type="time"></label>
+          </div>
+        </div>
+        <div class="fuite" id="dfoBox" hidden>
+          <div class="lg">DFO à quel niveau <span class="req">*</span></div>
+          <div class="radios">
+            <label><input type="radio" name="dfo" value="Conduite"> Conduite</label>
+            <label><input type="radio" name="dfo" value="Niche"> Niche</label>
+            <label><input type="radio" name="dfo" value="Nourrice"> Nourrice</label>
+            <label><input type="radio" name="dfo" value="Branchement"> Branchement</label>
+          </div>
+        </div>
+        <div class="fuite" id="manqueBox" hidden>
+          <div class="lg">Manque d'eau depuis</div>
+          <div class="row">
+            <label for="manqueDate">Date manque d'eau<input id="manqueDate" type="date"></label>
+            <label for="manqueHeure">Heure manque d'eau<input id="manqueHeure" type="time"></label>
+          </div>
+        </div>
+        <div class="fuite" id="appelBox" hidden>
+          <div class="lg">Raison de l'appel <span class="req">*</span></div>
+          <div class="checks">
+            <label><input type="checkbox" name="appel" value="Client non avisé suite coupure programmée"> Client non avisé suite coupure programmée</label>
+            <label><input type="checkbox" name="appel" value="Problème commercial"> Problème commercial</label>
+          </div>
+        </div>
         <label for="photo">Photo de la fuite / du lieu<input id="photo" type="file" accept="image/*" capture="environment"></label>
         <img id="preview" alt="Aperçu de la photo" hidden>
         <label for="obs">Observations<textarea id="obs" placeholder="Détails donnés par le client"></textarea></label>
@@ -154,7 +233,7 @@ button:disabled{opacity:.55;cursor:wait}
     </form>
   </section>
   <p class="privacy">Les réclamations envoyées ne sont pas visibles sur ce formulaire : elles sont transmises directement au responsable, avec votre compte Veolia.</p>
-  <p class="privacy">Version Veolia 1</p>
+  <p class="privacy">Version Veolia 2</p>
 </div>
 
 <script>
@@ -166,8 +245,10 @@ const $=id=>document.getElementById(id);
 let pos=null, photoData='', thumbData='';
 const QKEY='reuse-envoi-en-attente';
 
-try{$('agent').value=localStorage.getItem('reuse-agent')||''}catch(e){}
-$('agent').addEventListener('change',()=>{try{localStorage.setItem('reuse-agent',$('agent').value.trim())}catch(e){}});
+['agent','matricule'].forEach(id=>{
+  try{$(id).value=localStorage.getItem('reuse-'+id)||''}catch(e){}
+  $(id).addEventListener('change',()=>{try{localStorage.setItem('reuse-'+id,$(id).value.trim())}catch(e){}});
+});
 
 function msg(t,k){$('msg').textContent=t;$('msg').className='msg '+(k||'')}
 const mapsUrl=(lat,lng)=>'https://www.google.com/maps?q='+lat+','+lng;
@@ -195,8 +276,13 @@ $('btnGeo').addEventListener('click',()=>{
 });
 
 /* ---------- Formulaire ---------- */
-$('nature').addEventListener('change',()=>{$('fuiteBox').hidden=$('nature').value!=="Fuite d'eau"});
-$('form').addEventListener('reset',()=>setTimeout(()=>{$('fuiteBox').hidden=true;$('preview').hidden=true;photoData='';thumbData='';pos=null;showPos();$('geoNote').textContent='Placez-vous sur le lieu de la fuite puis appuyez sur le bouton.'},0));
+const BOXES={"Fuite d'eau":'fuiteBox','Réfection':'refectionBox',"Qualité d'eau":'qualiteBox','Problème de Pression':'pressionBox',
+  'Demande Coupure':'coupureBox','Demande Rebranchement':'rebranchementBox','DFO':'dfoBox',"Manque d'eau":'manqueBox','Appel Client pour Information':'appelBox'};
+const frDate=s=>s?s.split('-').reverse().join('/'):'';
+const dateHeure=(d,h)=>[frDate(d),h].filter(Boolean).join(' à ');
+function showBoxes(){const n=$('nature').value;Object.entries(BOXES).forEach(([k,id])=>{$(id).hidden=n!==k})}
+$('nature').addEventListener('change',showBoxes);
+$('form').addEventListener('reset',()=>setTimeout(()=>{showBoxes();$('preview').hidden=true;photoData='';thumbData='';pos=null;showPos();$('geoNote').textContent='Placez-vous sur le lieu de la fuite puis appuyez sur le bouton.'},0));
 function shrink(file,max=1280){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>{const s=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(img.src);res(c.toDataURL('image/jpeg',0.75))};img.onerror=()=>rej(new Error('image'));img.src=URL.createObjectURL(file)})}
 /* Position lue dans la photo (si le GPS du formulaire n'a pas pu être utilisé) */
 function gpsFromJpeg(buf){
@@ -259,15 +345,25 @@ $('form').addEventListener('submit',async e=>{
   e.preventDefault();
   const v=id=>($(id).value||'').trim(),f=$('form');
   if(!ENDPOINT)return msg("Ce formulaire n'est pas encore relié au tableau du responsable.",'err');
-  const miss=[];if(!v('nom'))miss.push('nom');if(!v('tel'))miss.push('téléphone');if(!v('adresse'))miss.push('adresse');if(!v('nature'))miss.push('nature');
+  const miss=[];if(!v('agent'))miss.push('nom de l’agent');if(!v('matricule'))miss.push('matricule');if(!v('nom'))miss.push('nom du réclamant');if(!v('adresse'))miss.push('adresse');if(!v('nature'))miss.push('nature');
   if(miss.length)return msg('Champ obligatoire manquant : '+miss.join(', ')+'.','err');
-  if((v('tel').match(/\d/g)||[]).length<8)return msg('Le numéro de téléphone semble incomplet (8 chiffres minimum).','err');
+  if(v('tel')&&(v('tel').match(/\d/g)||[]).length<8)return msg('Le numéro de téléphone semble incomplet (8 chiffres minimum).','err');
   const fuite=v('nature')==="Fuite d'eau";
   if(fuite&&!f.elements.loc.value)return msg('Indiquez la localisation de la fuite.','err');
+  const nat=v('nature');let detail='',depuis='',periode='',cil='',souhaite='';
+  const checked=n=>[...f.querySelectorAll('input[name='+n+']:checked')].map(x=>x.value).join(', ');
+  if(nat==='Demande Coupure'){cil=v('coupureCil');souhaite=dateHeure(v('coupureDate'),v('coupureHeure'))}
+  if(nat==='Demande Rebranchement'){cil=v('rebranchementCil');souhaite=dateHeure(v('rebranchementDate'),v('rebranchementHeure'))}
+  if(nat==='DFO'){detail=f.elements.dfo.value;if(!detail)return msg('Indiquez à quel niveau se trouve le DFO.','err')}
+  if(nat==="Manque d'eau"){depuis=dateHeure(v('manqueDate'),v('manqueHeure'))}
+  if(nat==='Appel Client pour Information'){detail=checked('appel');if(!detail)return msg('Cochez la raison de l’appel.','err')}
+  if(nat==='Réfection'){detail=f.elements.refection.value;if(!detail)return msg('Indiquez le type de réfection.','err')}
+  if(nat==="Qualité d'eau"){detail=[...f.querySelectorAll('input[name=qualite]:checked')].map(x=>x.value).join(', ');if(!detail)return msg('Cochez la nature du défaut qualité.','err');depuis=v('qualiteDepuis');periode=v('qualitePeriode')}
+  if(nat==='Problème de Pression'){detail=f.elements.pression.value;if(!detail)return msg('Indiquez la nature du défaut de pression.','err');depuis=v('pressionDepuis');periode=v('pressionPeriode')}
   const payload={clientId:(crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random()),saisieLe:new Date().toISOString(),
-    agent:v('agent'),nom:v('nom'),tel:v('tel'),email:v('email'),adresse:v('adresse'),quartier:v('quartier'),ville:v('ville'),
+    agent:v('agent'),matricule:v('matricule'),nom:v('nom'),tel:v('tel'),email:v('email'),adresse:v('adresse'),quartier:v('quartier'),ville:v('ville'),
     lat:pos?pos.lat:'',lng:pos?pos.lng:'',precision:pos?Math.round(pos.acc):'',
-    nature:v('nature'),localisation:fuite?f.elements.loc.value:'',importance:fuite?(f.elements.imp.value||''):'',obs:v('obs'),photo:photoData,vignette:thumbData};
+    nature:v('nature'),localisation:fuite?f.elements.loc.value:'',importance:fuite?(f.elements.imp.value||''):'',detail,depuis,periode,cil,souhaite,obs:v('obs'),photo:photoData,vignette:thumbData};
   const b=$('btnSave');b.disabled=true;msg('Envoi en cours…','info');
   try{
     const j=await send(payload);
