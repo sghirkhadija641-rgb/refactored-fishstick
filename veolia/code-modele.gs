@@ -12,7 +12,7 @@
  * (Exécuter en tant que : Moi ; Qui a accès : Anyone within Veolia).
  */
 
-const VERSION = 'Veolia 13';
+const VERSION = 'Veolia 14';
 const CODE_RE = /^RU-[2-9A-Z]{5}$/;
 const SHEET_NAME = 'Réclamations';
 const FOLDER_NAME = 'Photos réclamations Ré-Use';
@@ -45,6 +45,7 @@ function doGet(e) {
     return ContentService.createTextOutput('Le script des réclamations Ré-Use fonctionne. (version ' + VERSION + ')' + note);
   }
   const f = e && e.parameter ? e.parameter.f : '';
+  preparerFeuilles();
   const url = ScriptApp.getService().getUrl();
   const page = f === 'traitement' ? TRAITEMENT_HTML : FORM_HTML;
   return HtmlService.createHtmlOutput(page.split('__URL__').join(url))
@@ -304,6 +305,16 @@ function mettreAJourColonnes(sh, headers) {
     head.splice(at - 1, 0, h);
     if (headers === TRAITEMENT_HEADERS && h === 'N° de réclamation') lierNumeroReclamation(sh, 2, sh.getLastRow());
   });
+}
+
+// À chaque ouverture d'un formulaire : met les deux feuilles à jour (colonnes manquantes,
+// formules du N° de réclamation dans « Traitements »), sans attendre le prochain envoi.
+function preparerFeuilles() {
+  try {
+    getSheet();
+    const ts = getSheetFor(TRAITEMENTS_SHEET, TRAITEMENT_HEADERS);
+    lierNumeroReclamation(ts, 2, ts.getLastRow());
+  } catch (err) {}
 }
 
 // Feuille « Traitements » : le N° de réclamation est repris de la feuille « Réclamations »
