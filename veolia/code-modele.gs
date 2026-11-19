@@ -12,7 +12,7 @@
  * (Exécuter en tant que : Moi ; Qui a accès : Anyone within Veolia).
  */
 
-const VERSION = 'Veolia 12';
+const VERSION = 'Veolia 13';
 const CODE_RE = /^RU-[2-9A-Z]{5}$/;
 const SHEET_NAME = 'Réclamations';
 const FOLDER_NAME = 'Photos réclamations Ré-Use';
@@ -183,14 +183,21 @@ function enregistrerTraitement(t) {
   }
 }
 
-// Formulaire de traitement : renvoie seulement la nature de la réclamation liée au code.
+// Formulaire de traitement : renvoie seulement la nature et l'adresse de la réclamation liée au code.
 function natureDuCode(code) {
   try {
     code = String(code || '').trim().toUpperCase();
     if (!CODE_RE.test(code)) return { ok: false, error: 'code de suivi invalide (exemple : RU-K7P4Q)' };
     const sh = getSheet(), c = cols(sh), row = trouverLigne(sh, c, code, 'Code de suivi');
     if (!row) return { ok: false, error: 'Code de suivi inconnu : vérifiez le code donné lors de la saisie.' };
-    return { ok: true, nature: String(sh.getRange(row, c['Nature']).getValue() || '') };
+    const v = sh.getRange(row, 1, 1, sh.getLastColumn()).getValues()[0];
+    const g = h => c[h] ? String(v[c[h] - 1] || '') : '';
+    const carteRt = c['Carte'] ? sh.getRange(row, c['Carte']).getRichTextValue() : null;
+    return {
+      ok: true, nature: g('Nature'),
+      adresse: { adresse: g('Adresse'), quartier: g('Quartier'), secteur: g('Secteur'), commune: g('Commune'),
+                 carte: carteRt && carteRt.getLinkUrl() ? carteRt.getLinkUrl() : '' }
+    };
   } catch (err) {
     return { ok: false, error: 'vérification impossible : ' + err.message };
   }

@@ -81,6 +81,7 @@ button:disabled{opacity:.55;cursor:wait}
 .privacy{font-size:12px;color:var(--muted);text-align:center;margin:0}
 .fixed{padding:9px 10px;border:1px dashed var(--line);border-radius:4px;color:var(--muted);font-size:15px;margin-top:4px}
 .fixed.ok{color:var(--fg);border-style:solid;border-color:var(--accent);background:var(--accent-soft);font-weight:600}
+.carte{color:var(--accent);font-weight:600}
 .thumbs{display:flex;gap:8px;flex-wrap:wrap}
 .thumbs img{width:84px;height:64px;object-fit:cover;border-radius:4px;border:1px solid var(--line)}
 </style>
@@ -121,6 +122,17 @@ button:disabled{opacity:.55;cursor:wait}
         </div>
       </section>
 
+      <section class="card" id="adresseCard" hidden>
+        <div class="card-t">Adresse de la réclamation</div>
+        <div><label>Adresse</label><div class="fixed ok" id="aAdresse">—</div></div>
+        <div class="row">
+          <div><label>Quartier</label><div class="fixed ok" id="aQuartier">—</div></div>
+          <div><label>Secteur</label><div class="fixed ok" id="aSecteur">—</div></div>
+        </div>
+        <div><label>Commune</label><div class="fixed ok" id="aCommune">—</div></div>
+        <a id="aCarte" class="carte" href="#" target="_blank" rel="noopener" hidden>Ouvrir la carte</a>
+      </section>
+
       <section class="card">
         <div class="card-t">Client</div>
         <div class="row">
@@ -157,7 +169,7 @@ button:disabled{opacity:.55;cursor:wait}
     </form>
   </section>
   <p class="privacy">Le traitement est transmis directement au responsable, avec votre compte Veolia.</p>
-  <p class="privacy">Traitement — Version Veolia 12</p>
+  <p class="privacy">Traitement — Version Veolia 13</p>
 </div>
 
 <script>
@@ -182,7 +194,14 @@ $('form').addEventListener('reset',()=>setTimeout(()=>{photos=[];showPhotos();se
 /* Code de suivi : dès qu'il est complet, la nature de la réclamation est reprise de la saisie */
 let natureCode='',codeVerifie='',lookupSeq=0;
 const normCode=s=>{let c=String(s||'').toUpperCase().replace(/\s+/g,'');if(c&&!c.startsWith('RU-'))c='RU-'+c.replace(/^RU/,'');return c};
+function setAdresse(a){
+  a=a||{};const has=!!(a.adresse||a.quartier||a.secteur||a.commune);
+  [['aAdresse','adresse'],['aQuartier','quartier'],['aSecteur','secteur'],['aCommune','commune']].forEach(([id,k])=>{$(id).textContent=a[k]||'—'});
+  $('aCarte').hidden=!a.carte;if(a.carte)$('aCarte').href=a.carte;
+  $('adresseCard').hidden=!has;
+}
 function setNature(nature,note,kind){
+  if(!nature)setAdresse(null);
   natureCode=nature;$('natureVal').textContent=nature||'—';$('natureVal').className='fixed'+(nature?' ok':'');
   $('codeNote').textContent=note||"La nature de la réclamation s'affichera dès que le code est saisi.";$('codeNote').style.color=kind==='err'?'var(--bad)':'';
 }
@@ -192,7 +211,7 @@ function verifierCode(){
   const seq=++lookupSeq;setNature('','Recherche de la réclamation…');
   google.script.run
     .withSuccessHandler(r=>{if(seq!==lookupSeq)return;
-      if(r&&r.ok){codeVerifie=c;setNature(r.nature,'Réclamation trouvée.')}
+      if(r&&r.ok){codeVerifie=c;setNature(r.nature,'Réclamation trouvée.');setAdresse(r.adresse)}
       else setNature('',(r&&r.error)||'Code de suivi inconnu.','err')})
     .withFailureHandler(()=>{if(seq===lookupSeq)setNature('','Vérification impossible : vérifiez le réseau.','err')})
     .natureDuCode(c);
